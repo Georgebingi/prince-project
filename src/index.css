@@ -10,3 +10,9 @@
     @apply font-sans text-slate-900 bg-background antialiased;
   }
 }
+
+@layer utilities {
+  .progress-bar {
+    width: var(--progress-width, 0%);
+  }
+}

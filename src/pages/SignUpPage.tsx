@@ -3,10 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-import { User, Lock, Mail, Phone, Shield, Building, ArrowLeft, Code2 } from 'lucide-react';
+import { User, Lock, Mail, Phone, ArrowLeft, Code2 } from 'lucide-react';
+import { authApi, ApiError } from '../services/api';
 export function SignUpPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -17,20 +19,50 @@ export function SignUpPage() {
     password: '',
     confirmPassword: ''
   });
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
       return;
     }
+
+    if (!formData.role || !formData.email || !formData.fullName || !formData.password) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate registration
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('Registration successful! Please wait for admin approval.');
+    try {
+      const response = await authApi.register({
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        staffId: formData.staffId || formData.email, // backend requires a staffId; fall back to email if not provided
+        role: formData.role,
+        department: formData.department || undefined,
+        password: formData.password,
+      });
+
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Registration failed');
+      }
+
+      alert('Registration submitted! Please wait for admin approval.');
       navigate('/');
-    }, 2000);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+          ? err.message
+          : 'Registration failed. Please try again.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -90,6 +122,11 @@ export function SignUpPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="mb-2 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
               {/* Personal Information */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
@@ -134,7 +171,7 @@ export function SignUpPage() {
                 }, {
                   value: 'auditor',
                   label: 'Auditor'
-                }]} icon={<Shield className="h-4 w-4" />} value={formData.role} onChange={handleChange} required />
+                }]} value={formData.role} onChange={handleChange} required />
 
                   <Select label="Department" name="department" options={[{
                   value: 'judiciary',
@@ -154,7 +191,7 @@ export function SignUpPage() {
                 }, {
                   value: 'security',
                   label: 'Security'
-                }]} icon={<Building className="h-4 w-4" />} value={formData.department} onChange={handleChange} required />
+                }]} value={formData.department} onChange={handleChange} required />
                 </div>
               </div>
 
@@ -178,8 +215,8 @@ export function SignUpPage() {
 
               {/* Terms */}
               <div className="pt-2">
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <input type="checkbox" className="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary" required />
+                <label htmlFor="terms" className="flex items-start gap-2 cursor-pointer">
+                  <input id="terms" name="terms" type="checkbox" className="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary" required />
                   <span className="text-sm text-slate-600">
                     I agree to the{' '}
                     <a href="#" className="text-primary hover:underline">

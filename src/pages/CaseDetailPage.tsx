@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, createElement, Component } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-import { ArrowLeft, Calendar, Clock, FileText, User, Gavel, Download, MessageSquare, Upload, X, Eye, Save } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, FileText, User, Gavel, Download, MessageSquare, Upload, X, Eye } from 'lucide-react';
 import { useCases, CaseDocument } from '../contexts/CasesContext';
 import { useAuth } from '../contexts/AuthContext';
 export function CaseDetailPage() {
@@ -317,7 +317,7 @@ export function CaseDetailPage() {
                       <Upload className="h-4 w-4 mr-2" />
                       Upload Document
                     </Button>
-                    <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.jpg,.png" className="hidden" onChange={handleFileUpload} />
+                    <input ref={fileInputRef} id="case-document-upload" name="case-document-upload" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.png" className="hidden" onChange={handleFileUpload} aria-label="Upload case document" />
                   </div>
                 </div>
 
@@ -466,7 +466,7 @@ export function CaseDetailPage() {
                 <FileText className="h-5 w-5 text-slate-400" />
                 {selectedDocument.name}
               </h3>
-              <button onClick={() => setSelectedDocument(null)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button onClick={() => setSelectedDocument(null)} className="p-1 hover:bg-slate-100 rounded-full" aria-label="Close document viewer">
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>

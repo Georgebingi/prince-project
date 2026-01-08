@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -7,6 +7,10 @@ import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
 import { ShieldCheck, FileSearch, AlertOctagon, Users, Download, Filter, Calendar, Eye } from 'lucide-react';
 export function AuditorDashboard() {
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [actionFilter, setActionFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
   return <Layout title="Compliance Audit Log">
       <div className="space-y-6">
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
@@ -109,7 +113,12 @@ export function AuditorDashboard() {
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="relative">
                 <Filter className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                <Input placeholder="Filter by user or action..." className="pl-9" />
+                <Input
+                  placeholder="Filter by user or action..."
+                  className="pl-9"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
               </div>
               <Select options={[{
               value: 'all',
@@ -126,7 +135,7 @@ export function AuditorDashboard() {
             }, {
               value: 'admin',
               label: 'Admin'
-            }]} value="all" onChange={() => {}} label="" />
+            }]} value={roleFilter} onChange={e => setRoleFilter(e.target.value)} label="Role" />
               <Select options={[{
               value: 'all',
               label: 'All Action Types'
@@ -142,10 +151,15 @@ export function AuditorDashboard() {
             }, {
               value: 'access',
               label: 'Access'
-            }]} value="all" onChange={() => {}} label="" />
+            }]} value={actionFilter} onChange={e => setActionFilter(e.target.value)} label="Action Type" />
               <div className="relative">
                 <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                <Input type="date" className="pl-9" />
+                <Input
+                  type="date"
+                  className="pl-9"
+                  value={dateFilter}
+                  onChange={e => setDateFilter(e.target.value)}
+                />
               </div>
             </div>
             <Button variant="secondary">Apply Filters</Button>

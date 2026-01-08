@@ -92,7 +92,7 @@ export function SignOrdersPage() {
                 <FileText className="h-5 w-5 text-slate-400" />
                 Review Draft: {selectedOrder.title}
               </h3>
-              <button onClick={() => setSelectedOrder(null)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button onClick={() => setSelectedOrder(null)} className="p-1 hover:bg-slate-100 rounded-full" aria-label="Close order viewer">
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>

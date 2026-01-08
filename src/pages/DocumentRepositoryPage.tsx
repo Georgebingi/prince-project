@@ -157,7 +157,7 @@ export function DocumentRepositoryPage() {
                 ${dragActive ? 'border-primary bg-blue-50' : 'border-slate-300 hover:border-primary hover:bg-slate-50'}
                 ${!selectedCaseId ? 'opacity-50 cursor-not-allowed' : ''}
               `} onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrag} onClick={() => selectedCaseId && fileInputRef.current?.click()}>
-              <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileInput} disabled={!selectedCaseId} />
+              <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="hidden" onChange={handleFileInput} disabled={!selectedCaseId} aria-label="Upload document" />
 
               {uploading ? <div className="flex flex-col items-center gap-3">
                   <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -282,7 +282,7 @@ export function DocumentRepositoryPage() {
                 <FileText className="h-5 w-5 text-slate-400" />
                 {selectedDoc.name}
               </h3>
-              <button onClick={() => setSelectedDoc(null)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button onClick={() => setSelectedDoc(null)} className="p-1 hover:bg-slate-100 rounded-full" aria-label="Close document viewer">
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>

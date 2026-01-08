@@ -8,6 +8,7 @@ import { FolderOpen, Plus, Search, Filter, User, ChevronRight } from 'lucide-rea
 import { useNavigate } from 'react-router-dom';
 import { useCases } from '../contexts/CasesContext';
 import { CreateCaseModal } from '../components/CreateCaseModal';
+import { NetworkAwareSkeleton } from '../components/NetworkAwareSkeleton';
 export function CaseManagementPage() {
   const navigate = useNavigate();
   const {
@@ -16,6 +17,7 @@ export function CaseManagementPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
   const filteredCases = cases.filter(c => {
     const matchesStatus = statusFilter === 'all' || c.status.toLowerCase().includes(statusFilter);
     const matchesType = typeFilter === 'all' || c.type.toLowerCase() === typeFilter;
@@ -26,6 +28,7 @@ export function CaseManagementPage() {
     navigate(`/cases/${encodeURIComponent(caseId)}`);
   };
   return <Layout title="Case Management">
+      <NetworkAwareSkeleton isLoading={isLoading} type="table">
       <div className="space-y-6">
         {/* Actions Bar */}
         <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -161,6 +164,7 @@ export function CaseManagementPage() {
           </div>
         </Card>
       </div>
+      </NetworkAwareSkeleton>
 
       <CreateCaseModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
     </Layout>;

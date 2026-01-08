@@ -1,4 +1,6 @@
-import React, { useId } from 'react';
+import { useId } from 'react';
+import type React from 'react';
+
 interface SelectOption {
   value: string;
   label: string;
@@ -7,6 +9,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   options: SelectOption[];
   error?: string;
+  placeholder?: string;
 }
 export function Select({
   label,
@@ -14,9 +17,12 @@ export function Select({
   error,
   className = '',
   id,
+  placeholder = 'Select an option',
+  value,
   ...props
 }: SelectProps) {
-  const selectId = id || useId();
+  const generatedId = useId();
+  const selectId = id || generatedId;
   return <div className="w-full">
       {label && <label htmlFor={selectId} className="block text-sm font-medium text-slate-700 mb-1.5">
           {label}
@@ -28,9 +34,9 @@ export function Select({
             appearance-none
             ${error ? 'border-red-500 focus:ring-red-500' : ''}
             ${className}
-          `} {...props}>
-          <option value="" disabled selected>
-            Select an option
+          `} value={value} {...props}>
+          <option value="" disabled>
+            {placeholder}
           </option>
           {options.map(option => <option key={option.value} value={option.value}>
               {option.label}

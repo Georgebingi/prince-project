@@ -1,11 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { FileText, Upload, Download, Clock, CheckCircle, Printer, Mail, FolderOpen, X, Eye, Calendar, Bell, Send, ExternalLink, Users } from 'lucide-react';
+import { FileText, Upload, Download, CheckCircle, Printer, Mail, FolderOpen, X, Eye, Calendar, Bell, Send, ExternalLink } from 'lucide-react';
 import { useCases, CaseDocument } from '../../contexts/CasesContext';
 import { useSystem } from '../../contexts/SystemContext';
 import { useStaff } from '../../contexts/StaffContext';
@@ -95,7 +94,7 @@ export function ClerkDashboard() {
   }, [judgeCases]);
   // Get judges and lawyers for send notices
   const judgesAndLawyers = useMemo(() => {
-    return staff.filter(s => s.role === 'Judge' || s.role === 'Lawyer');
+    return staff.filter(s => s.role.toLowerCase() === 'judge' || s.role.toLowerCase() === 'lawyer');
   }, [staff]);
   const handleViewDocument = (task: Task) => {
     if (task.document) {
@@ -132,7 +131,7 @@ export function ClerkDashboard() {
       return;
     }
     selectedRecipients.forEach(recipientId => {
-      const recipient = staff.find(s => s.staffId === recipientId);
+      const recipient = staff.find(s => s.id === recipientId || (s as { staffId?: string }).staffId === recipientId);
       if (recipient) {
         addSystemNotification({
           title: 'Case Notice from Court Clerk',
@@ -147,8 +146,8 @@ export function ClerkDashboard() {
     setSelectedRecipients([]);
     setNoticeMessage('');
   };
-  const toggleRecipient = (staffId: string) => {
-    setSelectedRecipients(prev => prev.includes(staffId) ? prev.filter(id => id !== staffId) : [...prev, staffId]);
+  const toggleRecipient = (recipientId: string) => {
+    setSelectedRecipients(prev => prev.includes(recipientId) ? prev.filter(id => id !== recipientId) : [...prev, recipientId]);
   };
   return <Layout title="Clerk Dashboard">
       <div className="space-y-6">
@@ -356,7 +355,12 @@ export function ClerkDashboard() {
                 <FileText className="h-5 w-5 text-slate-400" />
                 {selectedDocument.name}
               </h3>
-              <button onClick={() => setSelectedDocument(null)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button
+                onClick={() => setSelectedDocument(null)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+                aria-label="Close document viewer"
+                type="button"
+              >
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
@@ -406,7 +410,12 @@ export function ClerkDashboard() {
                 <Mail className="h-5 w-5 text-slate-500" />
                 Send Notices to Judges & Lawyers
               </h3>
-              <button onClick={() => setShowSendNoticesModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button
+                onClick={() => setShowSendNoticesModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+                aria-label="Close send notices modal"
+                type="button"
+              >
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
@@ -417,8 +426,16 @@ export function ClerkDashboard() {
                   Select Recipients
                 </label>
                 <div className="space-y-2 max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-3">
-                  {judgesAndLawyers.map(person => <label key={person.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
-                      <input type="checkbox" checked={selectedRecipients.includes(person.staffId)} onChange={() => toggleRecipient(person.staffId)} className="rounded border-slate-300 text-primary focus:ring-primary" />
+                  {judgesAndLawyers.map(person => {
+                    const recipientId = person.id ?? (person as { staffId?: string }).staffId ?? '';
+                    return <label key={recipientId || person.name} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={recipientId ? selectedRecipients.includes(recipientId) : false}
+                          onChange={() => recipientId && toggleRecipient(recipientId)}
+                          className="rounded border-slate-300 text-primary focus:ring-primary"
+                          aria-label={`Select ${person.name}`}
+                        />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-slate-900">
                           {person.name}
@@ -427,7 +444,8 @@ export function ClerkDashboard() {
                           {person.role} • {person.department}
                         </p>
                       </div>
-                    </label>)}
+                    </label>;
+                  })}
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
                   {selectedRecipients.length} recipient(s) selected
@@ -469,7 +487,12 @@ export function ClerkDashboard() {
                 <Calendar className="h-5 w-5 text-slate-500" />
                 Complete Hearing Schedule
               </h3>
-              <button onClick={() => setShowScheduleModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+                aria-label="Close hearing schedule"
+                type="button"
+              >
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>

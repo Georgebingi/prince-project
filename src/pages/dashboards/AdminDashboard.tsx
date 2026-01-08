@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
-import { Users, Server, Activity, Database, Shield, Settings, UserPlus, FileText, Download, AlertTriangle, CheckCircle, X, Bell, Send } from 'lucide-react';
+import { Users, Server, Activity, Database, Shield, Settings, UserPlus, FileText, Download, AlertTriangle, X, Bell, Send } from 'lucide-react';
 import { useStaff } from '../../contexts/StaffContext';
 import { useCases } from '../../contexts/CasesContext';
 import { useSystem } from '../../contexts/SystemContext';
@@ -32,7 +32,7 @@ export function AdminDashboard() {
   // Calculate dynamic stats
   const stats = useMemo(() => {
     const totalUsers = staff.length;
-    const activeUsers = staff.filter(s => s.status === 'Active').length;
+    const activeUsers = staff.filter(s => s.status === 'active').length;
     const totalDocs = cases.reduce((acc, c) => acc + c.documents.length, 0);
     const storageUsed = (totalDocs * 2.5 + 45).toFixed(1);
     return {
@@ -118,7 +118,7 @@ export function AdminDashboard() {
                 </h3>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <Activity className="h-3 w-3 mr-1" />
-                  {staff.filter(s => s.status === 'Active').length} Active
+                  {staff.filter(s => s.status === 'active').length} Active
                 </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -234,11 +234,27 @@ export function AdminDashboard() {
                         <td className="px-4 py-3 text-slate-500">
                           {user.department}
                         </td>
-                        <td className="px-4 py-3">
-                          <Badge variant={user.status === 'Active' ? 'success' : user.status === 'Inactive' ? 'secondary' : 'danger'}>
-                            {user.status}
-                          </Badge>
-                        </td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          variant={
+                            user.status === 'active'
+                              ? 'success'
+                              : user.status === 'pending'
+                                ? 'warning'
+                                : user.status === 'suspended'
+                                  ? 'secondary'
+                                  : 'danger'
+                          }
+                        >
+                          {user.status === 'active'
+                            ? 'Active'
+                            : user.status === 'pending'
+                              ? 'Pending'
+                              : user.status === 'suspended'
+                                ? 'Suspended'
+                                : 'Rejected'}
+                        </Badge>
+                      </td>
                         <td className="px-4 py-3 text-slate-500 text-xs">
                           {user.lastActive}
                         </td>
@@ -321,16 +337,28 @@ export function AdminDashboard() {
                 <Settings className="h-5 w-5 text-slate-500" />
                 System Configuration
               </h2>
-              <button onClick={() => setShowConfigModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button
+                onClick={() => setShowConfigModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+                aria-label="Close system configuration"
+                type="button"
+              >
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-slate-700" htmlFor="system-name">
                   System Name
                 </label>
-                <input type="text" value="Kaduna High Court Management System" className="w-full p-2 border border-slate-300 rounded-md bg-slate-50" readOnly />
+                <input
+                  id="system-name"
+                  type="text"
+                  value="Kaduna High Court Management System"
+                  className="w-full p-2 border border-slate-300 rounded-md bg-slate-50"
+                  readOnly
+                  aria-readonly="true"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
@@ -338,7 +366,12 @@ export function AdminDashboard() {
                 </label>
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
                   <div className="flex items-center gap-2">
-                    <button onClick={handleToggleMaintenance} className={`w-12 h-6 rounded-full relative transition-colors ${settings.maintenanceMode ? 'bg-amber-500' : 'bg-slate-300'}`}>
+                    <button
+                      onClick={handleToggleMaintenance}
+                      className={`w-12 h-6 rounded-full relative transition-colors ${settings.maintenanceMode ? 'bg-amber-500' : 'bg-slate-300'}`}
+                      aria-label="Toggle maintenance mode"
+                      type="button"
+                    >
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${settings.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
                     </button>
                     <span className="text-sm text-slate-700">
@@ -349,16 +382,29 @@ export function AdminDashboard() {
                 </div>
               </div>
               {!settings.maintenanceMode && <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
+                  <label className="text-sm font-medium text-slate-700" htmlFor="maintenance-duration">
                     Maintenance Duration (minutes)
                   </label>
-                  <input type="number" value={maintenanceDuration} onChange={e => setMaintenanceDuration(Number(e.target.value))} className="w-full p-2 border border-slate-300 rounded-md" />
+                  <input
+                    id="maintenance-duration"
+                    type="number"
+                    value={maintenanceDuration}
+                    onChange={e => setMaintenanceDuration(Number(e.target.value))}
+                    className="w-full p-2 border border-slate-300 rounded-md"
+                    aria-label="Maintenance duration in minutes"
+                  />
                 </div>}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-slate-700" htmlFor="session-timeout">
                   Session Timeout (mins)
                 </label>
-                <input type="number" value={settings.sessionTimeout} className="w-full p-2 border border-slate-300 rounded-md" />
+                <input
+                  id="session-timeout"
+                  type="number"
+                  value={settings.sessionTimeout}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                  aria-label="Session timeout in minutes"
+                />
               </div>
               <div className="p-4 bg-blue-50 rounded-md text-sm text-blue-700">
                 <p>
@@ -383,7 +429,12 @@ export function AdminDashboard() {
                 <Bell className="h-5 w-5 text-slate-500" />
                 Send System Notification
               </h2>
-              <button onClick={() => setShowNotificationModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button
+                onClick={() => setShowNotificationModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+                aria-label="Close notification modal"
+                type="button"
+              >
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
@@ -445,7 +496,12 @@ export function AdminDashboard() {
                   <FileText className="h-5 w-5 text-slate-500" />
                   System Audit Report
                 </h2>
-                <button onClick={() => setShowAuditModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button
+                onClick={() => setShowAuditModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+                aria-label="Close audit report"
+                type="button"
+              >
                   <X className="h-5 w-5 text-slate-500" />
                 </button>
               </div>

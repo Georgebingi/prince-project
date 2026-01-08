@@ -95,7 +95,7 @@ export function ReviewMotionsPage() {
                 <FileText className="h-5 w-5 text-slate-400" />
                 {selectedMotion.title} - {selectedMotion.documentUrl}
               </h3>
-              <button onClick={() => setSelectedMotion(null)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button onClick={() => setSelectedMotion(null)} className="p-1 hover:bg-slate-100 rounded-full" aria-label="Close motion viewer">
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>

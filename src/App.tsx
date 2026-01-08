@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CasesProvider } from './contexts/CasesContext';
@@ -7,6 +6,7 @@ import { SystemProvider } from './contexts/SystemContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ChatWidget } from './components/ChatWidget';
+import { LoadingOverlay } from './components/LoadingOverlay';
 import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
 // Dashboards
@@ -62,12 +62,14 @@ function DashboardRouter() {
 }
 function AppContent() {
   const {
-    user
+    user,
+    isLoading: authLoading
   } = useAuth();
   const location = useLocation();
   // Only show chat widget if user is logged in and not on login/signup pages
   const showChat = user && !['/', '/signup'].includes(location.pathname);
   return <>
+      <LoadingOverlay isLoading={authLoading} text="Authenticating..." />
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
@@ -122,7 +124,12 @@ export function App() {
         <StaffProvider>
           <CasesProvider>
             <ChatProvider>
-              <Router>
+              <Router
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                }}
+              >
                 <AppContent />
               </Router>
             </ChatProvider>

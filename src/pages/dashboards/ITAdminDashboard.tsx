@@ -1,10 +1,46 @@
-import React from 'react';
+import { useRef, useEffect } from 'react';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
 import { Server, Users, Activity, Database, Shield, Settings, Search, RefreshCw, HardDrive } from 'lucide-react';
+
+interface RoleDistributionItemProps {
+  label: string;
+  count: number;
+  color: string;
+  total: number;
+}
+
+function RoleDistributionItem({ label, count, color, total }: RoleDistributionItemProps) {
+  const progressRef = useRef<HTMLDivElement>(null);
+  const widthPercent = `${(count / total) * 100}%`;
+  
+  useEffect(() => {
+    if (progressRef.current) {
+      progressRef.current.style.setProperty('--progress-width', widthPercent);
+    }
+  }, [widthPercent]);
+  
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-1">
+        <span className="text-slate-600">{label}</span>
+        <span className="font-medium text-slate-900">
+          {count}
+        </span>
+      </div>
+      <div className="w-full bg-slate-100 rounded-full h-2" ref={progressRef}>
+        <div 
+          className={`${color} h-2 rounded-full progress-bar`}
+          aria-label={`${label}: ${count} users`}
+        ></div>
+      </div>
+    </div>
+  );
+}
+
 export function ITAdminDashboard() {
   return <Layout title="System Control Center">
       <div className="space-y-6">
@@ -81,9 +117,7 @@ export function ITAdminDashboard() {
             </div>
             <div className="mt-4 flex items-center text-sm">
               <div className="w-full bg-slate-100 rounded-full h-1.5 mr-2 max-w-[100px]">
-                <div className="bg-purple-500 h-1.5 rounded-full" style={{
-                width: '65%'
-              }}></div>
+                <div className="bg-purple-500 h-1.5 rounded-full w-[65%]"></div>
               </div>
               <span className="text-slate-500">65% of 6.5TB</span>
             </div>
@@ -273,19 +307,15 @@ export function ITAdminDashboard() {
                 label: 'Partners',
                 count: 202,
                 color: 'bg-slate-500'
-              }].map((item, i) => <div key={i}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-slate-600">{item.label}</span>
-                      <span className="font-medium text-slate-900">
-                        {item.count}
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2">
-                      <div className={`${item.color} h-2 rounded-full`} style={{
-                    width: `${item.count / 842 * 100}%`
-                  }}></div>
-                    </div>
-                  </div>)}
+              }].map((item, i) => (
+                    <RoleDistributionItem
+                      key={i}
+                      label={item.label}
+                      count={item.count}
+                      color={item.color}
+                      total={842}
+                    />
+                  ))}
               </div>
             </Card>
 

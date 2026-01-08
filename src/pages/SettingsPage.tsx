@@ -3,7 +3,7 @@ import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { User, Lock, Bell, Shield, Camera, Save } from 'lucide-react';
+import { User, Lock, Bell, Camera, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 export function SettingsPage() {
   const {
@@ -108,7 +108,7 @@ export function SettingsPage() {
                         </div>}
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                         <Camera className="h-8 w-8 text-white" />
-                        <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
+                        <input id="profile-image-upload" name="profile-image-upload" type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} aria-label="Upload profile image" />
                       </div>
                     </div>
                     <p className="text-xs text-slate-500">
@@ -130,10 +130,10 @@ export function SettingsPage() {
                   phone: e.target.value
                 })} />
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label htmlFor="bio" className="block text-sm font-medium text-slate-700 mb-1">
                         Bio
                       </label>
-                      <textarea className="w-full rounded-md border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]" value={profileData.bio} onChange={e => setProfileData({
+                      <textarea id="bio" name="bio" className="w-full rounded-md border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]" value={profileData.bio} onChange={e => setProfileData({
                     ...profileData,
                     bio: e.target.value
                   })} />

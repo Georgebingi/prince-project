@@ -5,14 +5,12 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Badge } from '../components/ui/Badge';
-import { UserPlus, Search, Filter, Mail, Phone, Shield, MoreVertical } from 'lucide-react';
+import { UserPlus, Search, Filter, MoreVertical } from 'lucide-react';
 import { useStaff } from '../contexts/StaffContext';
 export function StaffRegistrationPage() {
   const {
     staff,
-    addStaff,
-    updateStaffStatus,
-    deleteStaff
+    addStaff
   } = useStaff();
   // Form State
   const [formData, setFormData] = useState({
@@ -33,11 +31,11 @@ export function StaffRegistrationPage() {
     setIsSubmitting(true);
     setTimeout(() => {
       addStaff({
-        name: `${formData.firstName} ${formData.lastName}`,
+        fullName: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         role: formData.role,
         department: formData.department || 'General',
-        status: 'Active'
+        password: formData.password
       });
       setIsSubmitting(false);
       setFormData({
@@ -197,7 +195,7 @@ export function StaffRegistrationPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={user.status === 'Active' ? 'success' : user.status === 'Inactive' ? 'secondary' : 'danger'}>
+                        <Badge variant={user.status === 'active' ? 'success' : user.status === 'pending' ? 'secondary' : 'danger'}>
                           {user.status}
                         </Badge>
                       </td>
@@ -205,7 +203,7 @@ export function StaffRegistrationPage() {
                         {user.joinedDate}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600">
+                        <button className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600" aria-label="More options">
                           <MoreVertical className="h-4 w-4" />
                         </button>
                       </td>
