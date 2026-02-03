@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
+<<<<<<< HEAD
 import {
   User,
   Lock,
@@ -16,6 +17,14 @@ import {
 export function SignUpPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+=======
+import { User, Lock, Mail, Phone, ArrowLeft, Code2 } from 'lucide-react';
+import { authApi, ApiError } from '../services/api';
+export function SignUpPage() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -26,13 +35,21 @@ export function SignUpPage() {
     password: '',
     confirmPassword: ''
   });
+<<<<<<< HEAD
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+=======
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
       return;
     }
+<<<<<<< HEAD
     setIsLoading(true);
     // Simulate registration
     setTimeout(() => {
@@ -44,11 +61,51 @@ export function SignUpPage() {
   const handleChange = (
   e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
   {
+=======
+
+    if (!formData.role || !formData.email || !formData.fullName || !formData.password) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await authApi.register({
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        staffId: formData.staffId || formData.email, // backend requires a staffId; fall back to email if not provided
+        role: formData.role,
+        department: formData.department || undefined,
+        password: formData.password,
+      });
+
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Registration failed');
+      }
+
+      alert('Registration submitted! Please wait for admin approval.');
+      navigate('/');
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+          ? err.message
+          : 'Registration failed. Please try again.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
+<<<<<<< HEAD
   const logos = [
   {
     name: 'Kaduna State',
@@ -63,6 +120,22 @@ export function SignUpPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden py-8">
+=======
+  const logos = [{
+    name: 'Kaduna State',
+    url: "/1000491869.jpg",
+    alt: 'Kaduna State Logo'
+  }, {
+    name: 'High Court',
+    url: "/1000491875.jpg",
+    alt: 'High Court Logo'
+  }, {
+    name: 'Defence Academy',
+    url: "/1000497577.png",
+    alt: 'Nigerian Defence Academy Logo'
+  }];
+  return <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden py-8">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       {/* Background pattern */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
 
@@ -73,6 +146,7 @@ export function SignUpPage() {
         <div className="w-full bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
           {/* Header */}
           <div className="p-6 text-center border-b border-slate-100 bg-slate-50/50">
+<<<<<<< HEAD
             <div className="flex justify-center mb-4 gap-8 items-center">
               {logos.map((logo, index) =>
               <div
@@ -92,6 +166,17 @@ export function SignUpPage() {
                   </span>
                 </div>
               )}
+=======
+            <div className="flex justify-center mb-4 gap-6 items-center">
+              {logos.map((logo, index) => <div key={index} className="flex flex-col items-center gap-1.5 animate-in fade-in slide-in-from-top-4 duration-500" style={{
+              animationDelay: `${index * 150}ms`
+            }}>
+                  <img src={logo.url} alt={logo.alt} className="h-12 w-auto object-contain transition-transform duration-300 hover:scale-110" />
+                  <span className="text-[9px] text-slate-500 font-medium">
+                    {logo.name}
+                  </span>
+                </div>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             </div>
             <h1 className="text-2xl font-bold text-slate-900 mb-1">
               Staff Registration
@@ -111,6 +196,14 @@ export function SignUpPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+<<<<<<< HEAD
+=======
+              {error && (
+                <div className="mb-2 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               {/* Personal Information */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
@@ -118,6 +211,7 @@ export function SignUpPage() {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<<<<<<< HEAD
                   <Input
                     label="Full Name"
                     name="fullName"
@@ -160,6 +254,17 @@ export function SignUpPage() {
                     value={formData.staffId}
                     onChange={handleChange} />
 
+=======
+                  <Input label="Full Name" name="fullName" placeholder="e.g. Ibrahim Musa Abdullahi" icon={<User className="h-4 w-4" />} value={formData.fullName} onChange={handleChange} required />
+
+                  <Input label="Email Address" name="email" type="email" placeholder="email@court.kd.gov.ng" icon={<Mail className="h-4 w-4" />} value={formData.email} onChange={handleChange} required />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input label="Phone Number" name="phone" type="tel" placeholder="+234 800 000 0000" icon={<Phone className="h-4 w-4" />} value={formData.phone} onChange={handleChange} required />
+
+                  <Input label="Staff ID (Optional)" name="staffId" placeholder="KDJ/2024/..." icon={<User className="h-4 w-4" />} value={formData.staffId} onChange={handleChange} />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 </div>
               </div>
 
@@ -170,6 +275,7 @@ export function SignUpPage() {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<<<<<<< HEAD
                   <Select
                     label="Role / Position"
                     name="role"
@@ -239,6 +345,47 @@ export function SignUpPage() {
                     onChange={handleChange}
                     required />
 
+=======
+                  <Select label="Role / Position" name="role" options={[{
+                  value: 'judge',
+                  label: 'Judge / Magistrate'
+                }, {
+                  value: 'registrar',
+                  label: 'Court Registrar'
+                }, {
+                  value: 'clerk',
+                  label: 'Court Clerk'
+                }, {
+                  value: 'admin',
+                  label: 'System Administrator'
+                }, {
+                  value: 'lawyer',
+                  label: 'Legal Practitioner'
+                }, {
+                  value: 'auditor',
+                  label: 'Auditor'
+                }]} value={formData.role} onChange={handleChange} required />
+
+                  <Select label="Department" name="department" options={[{
+                  value: 'judiciary',
+                  label: 'Judiciary (Bench)'
+                }, {
+                  value: 'registry',
+                  label: 'Court Registry'
+                }, {
+                  value: 'admin',
+                  label: 'Administration'
+                }, {
+                  value: 'legal',
+                  label: 'Legal Services'
+                }, {
+                  value: 'it',
+                  label: 'IT & Systems'
+                }, {
+                  value: 'security',
+                  label: 'Security'
+                }]} value={formData.department} onChange={handleChange} required />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 </div>
               </div>
 
@@ -249,6 +396,7 @@ export function SignUpPage() {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<<<<<<< HEAD
                   <Input
                     label="Password"
                     name="password"
@@ -270,6 +418,11 @@ export function SignUpPage() {
                     onChange={handleChange}
                     required />
 
+=======
+                  <Input label="Password" name="password" type="password" placeholder="••••••••" icon={<Lock className="h-4 w-4" />} value={formData.password} onChange={handleChange} required />
+
+                  <Input label="Confirm Password" name="confirmPassword" type="password" placeholder="••••••••" icon={<Lock className="h-4 w-4" />} value={formData.confirmPassword} onChange={handleChange} required />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 </div>
 
                 <p className="text-xs text-slate-500">
@@ -280,12 +433,17 @@ export function SignUpPage() {
 
               {/* Terms */}
               <div className="pt-2">
+<<<<<<< HEAD
                 <label className="flex items-start gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     className="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary"
                     required />
 
+=======
+                <label htmlFor="terms" className="flex items-start gap-2 cursor-pointer">
+                  <input id="terms" name="terms" type="checkbox" className="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary" required />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <span className="text-sm text-slate-600">
                     I agree to the{' '}
                     <a href="#" className="text-primary hover:underline">
@@ -297,12 +455,16 @@ export function SignUpPage() {
                 </label>
               </div>
 
+<<<<<<< HEAD
               <Button
                 type="submit"
                 className="w-full"
                 size="lg"
                 isLoading={isLoading}>
 
+=======
+              <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 Submit Registration
               </Button>
             </form>
@@ -312,10 +474,14 @@ export function SignUpPage() {
           <div className="px-8 py-4 bg-slate-50 border-t border-slate-100">
             <div className="flex items-center justify-center gap-2 text-sm mb-2">
               <span className="text-slate-600">Already have an account?</span>
+<<<<<<< HEAD
               <Link
                 to="/login"
                 className="text-primary hover:text-blue-700 font-medium flex items-center gap-1">
 
+=======
+              <Link to="/" className="text-primary hover:text-blue-700 font-medium flex items-center gap-1">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <ArrowLeft className="h-3 w-3" />
                 Back to Login
               </Link>
@@ -343,6 +509,10 @@ export function SignUpPage() {
           </span>
         </div>
       </footer>
+<<<<<<< HEAD
     </div>);
 
+=======
+    </div>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

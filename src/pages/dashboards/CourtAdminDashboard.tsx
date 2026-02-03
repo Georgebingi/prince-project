@@ -1,8 +1,12 @@
+<<<<<<< HEAD
 import React from 'react';
+=======
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+<<<<<<< HEAD
 import {
   BarChart3,
   Users,
@@ -17,6 +21,11 @@ import {
 export function CourtAdminDashboard() {
   return (
     <Layout title="Executive Overview">
+=======
+import { BarChart3, Users, FileText, AlertTriangle, TrendingUp, Download, PieChart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+export function CourtAdminDashboard() {
+  return <Layout title="Executive Overview">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -24,7 +33,11 @@ export function CourtAdminDashboard() {
               Court performance metrics and operational insights
             </p>
           </div>
+<<<<<<< HEAD
           <div className="flex gap-3">
+=======
+          <div className="flex gap-3">  
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <Button variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Export Data
@@ -147,6 +160,7 @@ export function CourtAdminDashboard() {
 
               {/* Mock Chart Visualization */}
               <div className="h-64 flex items-end justify-between gap-2 px-2">
+<<<<<<< HEAD
                 {[65, 45, 75, 55, 85, 70, 90, 60, 75, 50, 80, 95].map(
                   (height, i) =>
                   <div
@@ -180,6 +194,16 @@ export function CourtAdminDashboard() {
                     </div>
 
                 )}
+=======
+                {[65, 45, 75, 55, 85, 70, 90, 60, 75, 50, 80, 95].map((height, i) => <div key={i} className="w-full bg-blue-50 rounded-t-sm relative group">
+                      <div className="absolute bottom-0 w-full bg-blue-500 rounded-t-sm transition-all duration-500 group-hover:bg-blue-600" style={{
+                  height: `${height}%`
+                }}></div>
+                      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500">
+                        {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i]}
+                      </div>
+                    </div>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
             </Card>
 
@@ -204,6 +228,7 @@ export function CourtAdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
+<<<<<<< HEAD
                     {[
                     {
                       name: 'Hon. Sarah Jenkins',
@@ -235,6 +260,33 @@ export function CourtAdminDashboard() {
                     }].
                     map((staff, i) =>
                     <tr key={i} className="hover:bg-slate-50">
+=======
+                    {[{
+                    name: 'Hon. Sarah Jenkins',
+                    role: 'Judge',
+                    cases: 45,
+                    rate: '92%',
+                    status: 'Active'
+                  }, {
+                    name: 'Hon. Michael Ross',
+                    role: 'Judge',
+                    cases: 38,
+                    rate: '88%',
+                    status: 'In Hearing'
+                  }, {
+                    name: 'Elena Rodriguez',
+                    role: 'Registrar',
+                    cases: 124,
+                    rate: '98%',
+                    status: 'Active'
+                  }, {
+                    name: 'David Chen',
+                    role: 'Clerk',
+                    cases: 89,
+                    rate: '95%',
+                    status: 'On Leave'
+                  }].map((staff, i) => <tr key={i} className="hover:bg-slate-50">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <td className="px-4 py-3 font-medium text-slate-900">
                           {staff.name}
                         </td>
@@ -247,17 +299,24 @@ export function CourtAdminDashboard() {
                         <td className="px-4 py-3 text-slate-600">
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+<<<<<<< HEAD
                               <div
                               className="h-full bg-blue-500"
                               style={{
                                 width: staff.rate
                               }}>
                             </div>
+=======
+                              <div className="h-full bg-blue-500" style={{
+                            width: staff.rate
+                          }}></div>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                             </div>
                             {staff.rate}
                           </div>
                         </td>
                         <td className="px-4 py-3">
+<<<<<<< HEAD
                           <Badge
                           variant={
                           staff.status === 'Active' ?
@@ -272,6 +331,13 @@ export function CourtAdminDashboard() {
                         </td>
                       </tr>
                     )}
+=======
+                          <Badge variant={staff.status === 'Active' ? 'success' : staff.status === 'In Hearing' ? 'warning' : 'secondary'}>
+                            {staff.status}
+                          </Badge>
+                        </td>
+                      </tr>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   </tbody>
                 </table>
               </div>
@@ -285,6 +351,7 @@ export function CourtAdminDashboard() {
                 System Alerts
               </h3>
               <div className="space-y-4">
+<<<<<<< HEAD
                 {[
                 {
                   title: 'High Case Volume',
@@ -312,6 +379,25 @@ export function CourtAdminDashboard() {
                     <div
                     className={`mt-0.5 ${alert.type === 'warning' ? 'text-amber-500' : alert.type === 'error' ? 'text-red-500' : 'text-blue-500'}`}>
 
+=======
+                {[{
+                title: 'High Case Volume',
+                desc: 'Family court experiencing 20% surge',
+                type: 'warning',
+                time: '2h ago'
+              }, {
+                title: 'System Maintenance',
+                desc: 'Scheduled for tonight 2:00 AM',
+                type: 'info',
+                time: '4h ago'
+              }, {
+                title: 'Staff Shortage',
+                desc: '3 clerks on leave in Civil Division',
+                type: 'error',
+                time: '1d ago'
+              }].map((alert, i) => <div key={i} className="flex gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                    <div className={`mt-0.5 ${alert.type === 'warning' ? 'text-amber-500' : alert.type === 'error' ? 'text-red-500' : 'text-blue-500'}`}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       <AlertTriangle className="h-4 w-4" />
                     </div>
                     <div>
@@ -325,8 +411,12 @@ export function CourtAdminDashboard() {
                         {alert.time}
                       </span>
                     </div>
+<<<<<<< HEAD
                   </div>
                 )}
+=======
+                  </div>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
               <Button variant="outline" className="w-full mt-4 text-sm">
                 View All Alerts
@@ -366,6 +456,10 @@ export function CourtAdminDashboard() {
           </div>
         </div>
       </div>
+<<<<<<< HEAD
     </Layout>);
 
+=======
+    </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

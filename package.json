@@ -10,10 +10,22 @@
     "preview": "npx vite preview"
   },
   "dependencies": {
+<<<<<<< HEAD
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
     "lucide-react": "0.522.0"
+=======
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "0.522.0",
+    "mysql2": "^3.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   },
   "devDependencies": {
     "@types/node": "^20.11.18",
@@ -26,9 +38,13 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.1",
     "typescript": "^5.5.4",
+<<<<<<< HEAD
     "vite": "^5.2.0",
     "tailwindcss": "3.4.17",
     "autoprefixer": "latest",
     "postcss": "latest"
+=======
+    "vite": "^7.3.0"
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   }
 }

@@ -10,3 +10,12 @@
     @apply font-sans text-slate-900 bg-background antialiased;
   }
 }
+<<<<<<< HEAD
+=======
+
+@layer utilities {
+  .progress-bar {
+    width: var(--progress-width, 0%);
+  }
+}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e

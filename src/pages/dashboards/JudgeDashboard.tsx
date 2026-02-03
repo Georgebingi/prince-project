@@ -1,10 +1,15 @@
+<<<<<<< HEAD
 import React, { useState, Component } from 'react';
+=======
+import { useState } from 'react';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
+<<<<<<< HEAD
 import {
   BookOpen,
   Clock,
@@ -17,15 +22,28 @@ import {
   Search,
   Plus } from
 'lucide-react';
+=======
+import { BookOpen, Clock, Gavel, FileText, AlertCircle, CheckCircle, Scale, UserPlus, Search, Plus } from 'lucide-react';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { useCases } from '../../contexts/CasesContext';
 import { CreateCaseModal } from '../../components/CreateCaseModal';
 export function JudgeDashboard() {
   const navigate = useNavigate();
+<<<<<<< HEAD
   const { cases, motions, orders, assignCaseToLawyer } = useCases();
+=======
+  const {
+    cases,
+    motions,
+    orders,
+    assignCaseToLawyer
+  } = useCases();
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const [selectedCase, setSelectedCase] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState<string>('');
   // Filter cases for current judge AND exclude closed cases
+<<<<<<< HEAD
   const myCases = cases.filter(
     (c) =>
     c.judge === 'Hon. Justice Ibrahim' &&
@@ -57,6 +75,27 @@ export function JudgeDashboard() {
     label: 'Barr. Amina Bello'
   }];
 
+=======
+  const myCases = cases.filter(c => c.judge === 'Hon. Justice Ibrahim' && c.status !== 'Closed' && c.status !== 'Disposed');
+  // Cases that need lawyer assignment (mock logic: cases without lawyer assigned)
+  const unassignedCases = myCases.filter(c => !c.lawyer).slice(0, 3);
+  const pendingJudgment = myCases.filter(c => c.status === 'Pending Judgment').length;
+  const pendingMotions = motions.filter(m => m.status === 'Pending').length;
+  const draftOrders = orders.filter(o => o.status === 'Draft').length;
+  const lawyers = [{
+    value: 'Barrister Musa',
+    label: 'Barr. Musa'
+  }, {
+    value: 'Barr. Fatima Yusuf',
+    label: 'Barr. Fatima Yusuf'
+  }, {
+    value: 'Barr. John Doe',
+    label: 'Barr. John Doe'
+  }, {
+    value: 'Barr. Amina Bello',
+    label: 'Barr. Amina Bello'
+  }];
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const handleAssign = (caseId: string) => {
     if (selectedLawyer) {
       assignCaseToLawyer(caseId, selectedLawyer);
@@ -78,6 +117,7 @@ export function JudgeDashboard() {
       }
     });
   };
+<<<<<<< HEAD
   return (
     <Layout title="Judge's Chambers">
       <div className="space-y-6">
@@ -87,6 +127,13 @@ export function JudgeDashboard() {
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigate('/cases')}>
 
+=======
+  return <Layout title="Judge's Chambers">
+      <div className="space-y-6">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/cases')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Active Cases</p>
@@ -100,10 +147,14 @@ export function JudgeDashboard() {
             </div>
           </Card>
 
+<<<<<<< HEAD
           <Card
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigate('/cases?status=judgment')}>
 
+=======
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/cases?status=judgment')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Pending Judgment</p>
@@ -117,10 +168,14 @@ export function JudgeDashboard() {
             </div>
           </Card>
 
+<<<<<<< HEAD
           <Card
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigate('/sign-orders')}>
 
+=======
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/sign-orders')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Draft Orders</p>
@@ -134,10 +189,14 @@ export function JudgeDashboard() {
             </div>
           </Card>
 
+<<<<<<< HEAD
           <Card
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigate('/review-motions')}>
 
+=======
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/review-motions')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Pending Motions</p>
@@ -173,12 +232,16 @@ export function JudgeDashboard() {
               </div>
 
               <div className="space-y-4">
+<<<<<<< HEAD
                 {unassignedCases.length > 0 ?
                 unassignedCases.map((c) =>
                 <div
                   key={c.id}
                   className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 
+=======
+                {unassignedCases.length > 0 ? unassignedCases.map(c => <div key={c.id} className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono text-xs font-bold text-slate-500">
@@ -198,6 +261,7 @@ export function JudgeDashboard() {
 
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <div className="w-full sm:w-48">
+<<<<<<< HEAD
                           <Select
                         options={lawyers}
                         placeholder="Select Lawyer..."
@@ -205,11 +269,15 @@ export function JudgeDashboard() {
                         value={selectedLawyer}
                         onChange={(e) => setSelectedLawyer(e.target.value)} />
 
+=======
+                          <Select options={lawyers} placeholder="Select Lawyer..." className="w-full" value={selectedLawyer} onChange={e => setSelectedLawyer(e.target.value)} />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         </div>
                         <Button size="sm" onClick={() => handleAssign(c.id)}>
                           Assign
                         </Button>
                       </div>
+<<<<<<< HEAD
                     </div>
                 ) :
 
@@ -218,6 +286,12 @@ export function JudgeDashboard() {
                     <p>All pending cases have been assigned!</p>
                   </div>
                 }
+=======
+                    </div>) : <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                    <p>All pending cases have been assigned!</p>
+                  </div>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
             </Card>
 
@@ -234,6 +308,7 @@ export function JudgeDashboard() {
                     </p>
                   </div>
                   <div className="flex gap-2">
+<<<<<<< HEAD
                     <Button
                       size="sm"
                       variant="outline"
@@ -247,6 +322,13 @@ export function JudgeDashboard() {
                       variant="ghost"
                       onClick={() => navigate('/cases')}>
 
+=======
+                    <Button size="sm" variant="outline" onClick={() => setShowCreateModal(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Case
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/cases')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       View All
                     </Button>
                   </div>
@@ -256,6 +338,7 @@ export function JudgeDashboard() {
               {/* Library Shelf View */}
               <div className="p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+<<<<<<< HEAD
                   {myCases.length > 0 ?
                   myCases.map((caseFile) =>
                   <button
@@ -266,6 +349,10 @@ export function JudgeDashboard() {
                         <div
                       className={`${caseFile.color} rounded-r-lg shadow-lg h-48 flex flex-col justify-between p-4 text-white transform perspective-1000 hover:shadow-xl transition-shadow`}>
 
+=======
+                  {myCases.length > 0 ? myCases.map(caseFile => <button key={caseFile.id} onClick={() => setSelectedCase(caseFile.id)} className={`relative group cursor-pointer transition-all duration-300 hover:scale-105 outline-none focus:ring-2 focus:ring-primary rounded-lg ${selectedCase === caseFile.id ? 'scale-105 ring-2 ring-primary' : ''}`}>
+                        <div className={`${caseFile.color} rounded-r-lg shadow-lg h-48 flex flex-col justify-between p-4 text-white transform perspective-1000 hover:shadow-xl transition-shadow`}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                           <div>
                             <div className="text-xs font-bold mb-2 opacity-90">
                               {caseFile.id}
@@ -286,6 +373,7 @@ export function JudgeDashboard() {
                             </div>
                           </div>
 
+<<<<<<< HEAD
                           {caseFile.priority === 'High' &&
                       <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
                               !
@@ -319,6 +407,27 @@ export function JudgeDashboard() {
                     );
                     return selected ?
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+=======
+                          {caseFile.priority === 'High' && <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
+                              !
+                            </div>}
+                        </div>
+                        <div className="h-2 bg-slate-200 rounded-b-sm mt-0.5"></div>
+                      </button>) : <div className="col-span-full py-12 text-center text-slate-500">
+                      <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                      <p>No active cases in your library.</p>
+                      <Button variant="outline" className="mt-4" onClick={() => setShowCreateModal(true)}>
+                        Create New Case
+                      </Button>
+                    </div>}
+                </div>
+
+                {/* Selected Case Details */}
+                {selectedCase && <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
+                    {(() => {
+                  const selected = myCases.find(c => c.id === selectedCase);
+                  return selected ? <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                           <div className="flex-1">
                             <h4 className="font-semibold text-slate-900 mb-1">
                               {selected.title}
@@ -336,6 +445,7 @@ export function JudgeDashboard() {
                             </div>
                           </div>
                           <div className="flex gap-2">
+<<<<<<< HEAD
                             <Button
                           size="sm"
                           variant="outline"
@@ -355,6 +465,18 @@ export function JudgeDashboard() {
                   })()}
                   </div>
                 }
+=======
+                            <Button size="sm" variant="outline" onClick={() => handleViewDetails(selected.id)}>
+                              View Details
+                            </Button>
+                            <Button size="sm" onClick={() => handleOpenCase(selected.id)}>
+                              Open Case
+                            </Button>
+                          </div>
+                        </div> : null;
+                })()}
+                  </div>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
             </Card>
           </div>
@@ -367,6 +489,7 @@ export function JudgeDashboard() {
                 Quick Actions
               </h3>
               <div className="space-y-2">
+<<<<<<< HEAD
                 <Button
                   variant="outline"
                   className="w-full justify-start hover:bg-slate-50 hover:text-primary hover:border-primary/30 transition-all"
@@ -400,6 +523,21 @@ export function JudgeDashboard() {
                   size="sm"
                   onClick={() => navigate('/cases')}>
 
+=======
+                <Button variant="outline" className="w-full justify-start hover:bg-slate-50 hover:text-primary hover:border-primary/30 transition-all" size="sm" onClick={() => navigate('/write-judgment')}>
+                  <Gavel className="h-4 w-4 mr-2" />
+                  Write Judgment
+                </Button>
+                <Button variant="outline" className="w-full justify-start hover:bg-slate-50 hover:text-primary hover:border-primary/30 transition-all" size="sm" onClick={() => navigate('/review-motions')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Review Motions
+                </Button>
+                <Button variant="outline" className="w-full justify-start hover:bg-slate-50 hover:text-primary hover:border-primary/30 transition-all" size="sm" onClick={() => navigate('/sign-orders')}>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Sign Orders
+                </Button>
+                <Button variant="outline" className="w-full justify-start hover:bg-slate-50 hover:text-primary hover:border-primary/30 transition-all" size="sm" onClick={() => navigate('/cases')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <Search className="h-4 w-4 mr-2" />
                   Search Case Law
                 </Button>
@@ -409,10 +547,15 @@ export function JudgeDashboard() {
         </div>
       </div>
 
+<<<<<<< HEAD
       <CreateCaseModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)} />
 
     </Layout>);
 
+=======
+      <CreateCaseModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+    </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

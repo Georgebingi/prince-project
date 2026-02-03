@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import {
   BrowserRouter as Router,
@@ -6,6 +7,9 @@ import {
   Navigate,
   useLocation } from
 'react-router-dom';
+=======
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CasesProvider } from './contexts/CasesContext';
 import { StaffProvider } from './contexts/StaffContext';
@@ -13,9 +17,15 @@ import { SystemProvider } from './contexts/SystemContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ChatWidget } from './components/ChatWidget';
+<<<<<<< HEAD
 import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { WelcomePage } from './pages/WelcomePage';
+=======
+import { LoadingOverlay } from './components/LoadingOverlay';
+import { LoginPage } from './pages/LoginPage';
+import { SignUpPage } from './pages/SignUpPage';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 // Dashboards
 import { JudgeDashboard } from './pages/dashboards/JudgeDashboard';
 import { RegistrarDashboard } from './pages/dashboards/RegistrarDashboard';
@@ -37,9 +47,17 @@ import { WriteJudgmentPage } from './pages/WriteJudgmentPage';
 import { ReviewMotionsPage } from './pages/ReviewMotionsPage';
 import { SignOrdersPage } from './pages/SignOrdersPage';
 function DashboardRouter() {
+<<<<<<< HEAD
   const { user } = useAuth();
   if (!user) {
     return <Navigate to="/login" replace />;
+=======
+  const {
+    user
+  } = useAuth();
+  if (!user) {
+    return <Navigate to="/" replace />;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   }
   // Route to role-specific dashboard
   switch (user.role) {
@@ -62,6 +80,7 @@ function DashboardRouter() {
     case 'partner':
       return <PartnerDashboard />;
     default:
+<<<<<<< HEAD
       return <Navigate to="/login" replace />;
   }
 }
@@ -175,28 +194,104 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
+=======
+      return <Navigate to="/" replace />;
+  }
+}
+function AppContent() {
+  const {
+    user,
+    isLoading: authLoading
+  } = useAuth();
+  const location = useLocation();
+  // Only show chat widget if user is logged in and not on login/signup pages
+  const showChat = user && !['/', '/signup'].includes(location.pathname);
+  return <>
+      <LoadingOverlay isLoading={authLoading} text="Authenticating..." />
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute>
+              <DashboardRouter />
+            </ProtectedRoute>} />
+        <Route path="/cases" element={<ProtectedRoute>
+              <CaseManagementPage />
+            </ProtectedRoute>} />
+        <Route path="/cases/:id" element={<ProtectedRoute>
+              <CaseDetailPage />
+            </ProtectedRoute>} />
+        <Route path="/documents" element={<ProtectedRoute>
+              <DocumentRepositoryPage />
+            </ProtectedRoute>} />
+        <Route path="/staff" element={<ProtectedRoute>
+              <StaffRegistrationPage />
+            </ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute>
+              <ReportsPage />
+            </ProtectedRoute>} />
+        <Route path="/audit" element={<ProtectedRoute>
+              <AuditLogPage />
+            </ProtectedRoute>} />
+        <Route path="/interoperability" element={<ProtectedRoute>
+              <PartnerInteroperabilityPage />
+            </ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>} />
+        <Route path="/write-judgment" element={<ProtectedRoute>
+              <WriteJudgmentPage />
+            </ProtectedRoute>} />
+        <Route path="/review-motions" element={<ProtectedRoute>
+              <ReviewMotionsPage />
+            </ProtectedRoute>} />
+        <Route path="/sign-orders" element={<ProtectedRoute>
+              <SignOrdersPage />
+            </ProtectedRoute>} />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       {showChat && <ChatWidget />}
+<<<<<<< HEAD
     </>);
 
 }
 export function App() {
   return (
     <AuthProvider>
+=======
+    </>;
+}
+export function App() {
+  return <AuthProvider>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <SystemProvider>
         <StaffProvider>
           <CasesProvider>
             <ChatProvider>
+<<<<<<< HEAD
               <Router>
+=======
+              <Router
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                }}
+              >
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <AppContent />
               </Router>
             </ChatProvider>
           </CasesProvider>
         </StaffProvider>
       </SystemProvider>
+<<<<<<< HEAD
     </AuthProvider>);
 
+=======
+    </AuthProvider>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

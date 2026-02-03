@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 import React from 'react';
+=======
+import { useRef, useEffect } from 'react';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
+<<<<<<< HEAD
 import {
   Server,
   Users,
@@ -18,6 +23,47 @@ import {
 export function ITAdminDashboard() {
   return (
     <Layout title="System Control Center">
+=======
+import { Server, Users, Activity, Database, Shield, Settings, Search, RefreshCw, HardDrive } from 'lucide-react';
+
+interface RoleDistributionItemProps {
+  label: string;
+  count: number;
+  color: string;
+  total: number;
+}
+
+function RoleDistributionItem({ label, count, color, total }: RoleDistributionItemProps) {
+  const progressRef = useRef<HTMLDivElement>(null);
+  const widthPercent = `${(count / total) * 100}%`;
+  
+  useEffect(() => {
+    if (progressRef.current) {
+      progressRef.current.style.setProperty('--progress-width', widthPercent);
+    }
+  }, [widthPercent]);
+  
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-1">
+        <span className="text-slate-600">{label}</span>
+        <span className="font-medium text-slate-900">
+          {count}
+        </span>
+      </div>
+      <div className="w-full bg-slate-100 rounded-full h-2" ref={progressRef}>
+        <div 
+          className={`${color} h-2 rounded-full progress-bar`}
+          aria-label={`${label}: ${count} users`}
+        ></div>
+      </div>
+    </div>
+  );
+}
+
+export function ITAdminDashboard() {
+  return <Layout title="System Control Center">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -92,12 +138,16 @@ export function ITAdminDashboard() {
             </div>
             <div className="mt-4 flex items-center text-sm">
               <div className="w-full bg-slate-100 rounded-full h-1.5 mr-2 max-w-[100px]">
+<<<<<<< HEAD
                 <div
                   className="bg-purple-500 h-1.5 rounded-full"
                   style={{
                     width: '65%'
                   }}>
                 </div>
+=======
+                <div className="bg-purple-500 h-1.5 rounded-full w-[65%]"></div>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
               <span className="text-slate-500">65% of 6.5TB</span>
             </div>
@@ -158,6 +208,7 @@ export function ITAdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
+<<<<<<< HEAD
                       {[
                       {
                         name: 'Sarah Connor',
@@ -179,6 +230,24 @@ export function ITAdminDashboard() {
                       }].
                       map((user, i) =>
                       <tr key={i} className="bg-white">
+=======
+                      {[{
+                      name: 'Sarah Connor',
+                      email: 's.connor@court.gov',
+                      role: 'Clerk',
+                      dept: 'Civil'
+                    }, {
+                      name: 'James Wright',
+                      email: 'j.wright@law.com',
+                      role: 'Lawyer',
+                      dept: 'External'
+                    }, {
+                      name: 'Emily Chen',
+                      email: 'e.chen@court.gov',
+                      role: 'Registrar',
+                      dept: 'Family'
+                    }].map((user, i) => <tr key={i} className="bg-white">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                           <td className="px-4 py-3">
                             <div className="font-medium text-slate-900">
                               {user.name}
@@ -195,11 +264,15 @@ export function ITAdminDashboard() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-2">
+<<<<<<< HEAD
                               <Button
                               size="sm"
                               variant="outline"
                               className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
 
+=======
+                              <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                                 Reject
                               </Button>
                               <Button size="sm" variant="primary">
@@ -207,8 +280,12 @@ export function ITAdminDashboard() {
                               </Button>
                             </div>
                           </td>
+<<<<<<< HEAD
                         </tr>
                       )}
+=======
+                        </tr>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     </tbody>
                   </table>
                 </div>
@@ -220,6 +297,7 @@ export function ITAdminDashboard() {
                 System Activity Log
               </h3>
               <div className="space-y-4">
+<<<<<<< HEAD
                 {[
                 {
                   action: 'User Permissions Updated',
@@ -264,6 +342,35 @@ export function ITAdminDashboard() {
 
                     <Settings className="h-3 w-3" />
                     }
+=======
+                {[{
+                action: 'User Permissions Updated',
+                user: 'Admin User',
+                target: 'John Doe',
+                time: '10 mins ago',
+                type: 'info'
+              }, {
+                action: 'Failed Login Attempt',
+                user: 'Unknown IP',
+                target: 'System',
+                time: '25 mins ago',
+                type: 'warning'
+              }, {
+                action: 'Database Backup Completed',
+                user: 'System',
+                target: 'Primary DB',
+                time: '1 hour ago',
+                type: 'success'
+              }, {
+                action: 'New Role Created',
+                user: 'Admin User',
+                target: 'Senior Clerk',
+                time: '2 hours ago',
+                type: 'info'
+              }].map((log, i) => <div key={i} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                    <div className={`mt-1 p-1.5 rounded-full ${log.type === 'warning' ? 'bg-amber-100 text-amber-600' : log.type === 'success' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                      {log.type === 'warning' ? <Shield className="h-3 w-3" /> : log.type === 'success' ? <Database className="h-3 w-3" /> : <Settings className="h-3 w-3" />}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between">
@@ -279,8 +386,12 @@ export function ITAdminDashboard() {
                         Target: {log.target}
                       </p>
                     </div>
+<<<<<<< HEAD
                   </div>
                 )}
+=======
+                  </div>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
               <Button variant="outline" className="w-full mt-4">
                 View Full Audit Logs
@@ -295,6 +406,7 @@ export function ITAdminDashboard() {
                 Role Distribution
               </h3>
               <div className="space-y-4">
+<<<<<<< HEAD
                 {[
                 {
                   label: 'Lawyers',
@@ -339,6 +451,37 @@ export function ITAdminDashboard() {
                     </div>
                   </div>
                 )}
+=======
+                {[{
+                label: 'Lawyers',
+                count: 450,
+                color: 'bg-blue-500'
+              }, {
+                label: 'Judges',
+                count: 45,
+                color: 'bg-purple-500'
+              }, {
+                label: 'Clerks',
+                count: 120,
+                color: 'bg-green-500'
+              }, {
+                label: 'Registrars',
+                count: 25,
+                color: 'bg-orange-500'
+              }, {
+                label: 'Partners',
+                count: 202,
+                color: 'bg-slate-500'
+              }].map((item, i) => (
+                    <RoleDistributionItem
+                      key={i}
+                      label={item.label}
+                      count={item.count}
+                      color={item.color}
+                      total={842}
+                    />
+                  ))}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
             </Card>
 
@@ -378,6 +521,10 @@ export function ITAdminDashboard() {
           </div>
         </div>
       </div>
+<<<<<<< HEAD
     </Layout>);
 
+=======
+    </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

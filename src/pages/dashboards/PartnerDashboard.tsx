@@ -3,6 +3,7 @@ import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+<<<<<<< HEAD
 import {
   Globe,
   ArrowRightLeft,
@@ -14,29 +15,46 @@ import {
 export function PartnerDashboard() {
   const transfers = [
   {
+=======
+import { Globe, ArrowRightLeft, FileCheck, Shield, Activity, Search } from 'lucide-react';
+export function PartnerDashboard() {
+  const transfers = [{
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: 'TRX-8829',
     type: 'Warrant Request',
     target: 'Police HQ',
     status: 'Completed',
     time: '10:42 AM'
+<<<<<<< HEAD
   },
   {
+=======
+  }, {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: 'TRX-8830',
     type: 'Prisoner Remand',
     target: 'Correctional Center',
     status: 'Processing',
     time: '11:15 AM'
+<<<<<<< HEAD
   },
   {
+=======
+  }, {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: 'TRX-8831',
     type: 'Evidence Transfer',
     target: 'Forensic Lab',
     status: 'Pending',
     time: '11:30 AM'
   }];
+<<<<<<< HEAD
 
   return (
     <Layout title="Partner Interoperability Portal">
+=======
+  return <Layout title="Partner Interoperability Portal">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
           <div className="flex items-center gap-4">
@@ -105,11 +123,15 @@ export function PartnerDashboard() {
               </Button>
             </div>
             <div className="space-y-4">
+<<<<<<< HEAD
               {transfers.map((t) =>
               <div
                 key={t.id}
                 className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
 
+=======
+              {transfers.map(t => <div key={t.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white rounded border border-slate-200">
                       <ArrowRightLeft className="h-4 w-4 text-slate-500" />
@@ -122,6 +144,7 @@ export function PartnerDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
+<<<<<<< HEAD
                     <Badge
                     variant={
                     t.status === 'Completed' ?
@@ -131,12 +154,19 @@ export function PartnerDashboard() {
                     'default'
                     }>
 
+=======
+                    <Badge variant={t.status === 'Completed' ? 'success' : t.status === 'Processing' ? 'warning' : 'default'}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       {t.status}
                     </Badge>
                     <p className="text-xs text-slate-400 mt-1">{t.time}</p>
                   </div>
+<<<<<<< HEAD
                 </div>
               )}
+=======
+                </div>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             </div>
           </Card>
 
@@ -152,11 +182,15 @@ export function PartnerDashboard() {
                 queries are logged.
               </p>
               <div className="flex gap-2">
+<<<<<<< HEAD
                 <input
                   type="text"
                   placeholder="Enter Case ID or Warrant Number"
                   className="flex-1 h-10 px-3 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
 
+=======
+                <input type="text" placeholder="Enter Case ID or Warrant Number" className="flex-1 h-10 px-3 rounded-md border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <Button>
                   <Search className="h-4 w-4" />
                 </Button>
@@ -178,6 +212,10 @@ export function PartnerDashboard() {
           </Card>
         </div>
       </div>
+<<<<<<< HEAD
     </Layout>);
 
+=======
+    </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

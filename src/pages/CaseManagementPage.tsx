@@ -4,6 +4,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { Badge } from '../components/ui/Badge';
+<<<<<<< HEAD
 import {
   FolderOpen,
   Plus,
@@ -26,25 +27,53 @@ export function CaseManagementPage() {
     statusFilter === 'all' || c.status.toLowerCase().includes(statusFilter);
     const matchesType =
     typeFilter === 'all' || c.type.toLowerCase() === typeFilter;
+=======
+import { FolderOpen, Plus, Search, Filter, User, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useCases } from '../contexts/CasesContext';
+import { CreateCaseModal } from '../components/CreateCaseModal';
+import { NetworkAwareSkeleton } from '../components/NetworkAwareSkeleton';
+export function CaseManagementPage() {
+  const navigate = useNavigate();
+  const {
+    cases
+  } = useCases();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+  const filteredCases = cases.filter(c => {
+    const matchesStatus = statusFilter === 'all' || c.status.toLowerCase().includes(statusFilter);
+    const matchesType = typeFilter === 'all' || c.type.toLowerCase() === typeFilter;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     return matchesStatus && matchesType;
   });
   const handleCaseClick = (caseId: string) => {
     // Encode the ID to handle slashes in the URL
     navigate(`/cases/${encodeURIComponent(caseId)}`);
   };
+<<<<<<< HEAD
   return (
     <Layout title="Case Management">
+=======
+  return <Layout title="Case Management">
+      <NetworkAwareSkeleton isLoading={isLoading} type="table">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="space-y-6">
         {/* Actions Bar */}
         <div className="flex flex-col md:flex-row justify-between gap-4">
           <div className="flex gap-2 flex-1">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+<<<<<<< HEAD
               <input
                 type="text"
                 placeholder="Search cases by ID, title, or parties..."
                 className="w-full h-10 pl-10 pr-4 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm" />
 
+=======
+              <input type="text" placeholder="Search cases by ID, title, or parties..." className="w-full h-10 pl-10 pr-4 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm" />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             </div>
             <Button variant="secondary">
               <Filter className="h-4 w-4 mr-2" />
@@ -59,6 +88,7 @@ export function CaseManagementPage() {
 
         {/* Filters Row */}
         <div className="flex gap-4 overflow-x-auto pb-2">
+<<<<<<< HEAD
           <Select
             className="w-40"
             value={statusFilter}
@@ -117,6 +147,43 @@ export function CaseManagementPage() {
             }]
             } />
 
+=======
+          <Select className="w-40" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} options={[{
+          value: 'all',
+          label: 'All Statuses'
+        }, {
+          value: 'filed',
+          label: 'Filed'
+        }, {
+          value: 'progress',
+          label: 'In Progress'
+        }, {
+          value: 'judgment',
+          label: 'Pending Judgment'
+        }, {
+          value: 'disposed',
+          label: 'Disposed'
+        }]} />
+          <Select className="w-40" value={typeFilter} onChange={e => setTypeFilter(e.target.value)} options={[{
+          value: 'all',
+          label: 'All Types'
+        }, {
+          value: 'criminal',
+          label: 'Criminal'
+        }, {
+          value: 'civil',
+          label: 'Civil'
+        }, {
+          value: 'family',
+          label: 'Family'
+        }, {
+          value: 'commercial',
+          label: 'Commercial'
+        }, {
+          value: 'appeal',
+          label: 'Appeal'
+        }]} />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
         </div>
 
         {/* Case List */}
@@ -134,12 +201,16 @@ export function CaseManagementPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
+<<<<<<< HEAD
                 {filteredCases.map((c) =>
                 <tr
                   key={c.id}
                   className="group hover:bg-slate-50 transition-colors cursor-pointer"
                   onClick={() => handleCaseClick(c.id)}>
 
+=======
+                {filteredCases.map(c => <tr key={c.id} className="group hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => handleCaseClick(c.id)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     <td className="px-6 py-4">
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-blue-50 rounded text-blue-600 mt-1 group-hover:bg-blue-100 transition-colors">
@@ -159,6 +230,7 @@ export function CaseManagementPage() {
                       <span className="text-slate-700">{c.type}</span>
                     </td>
                     <td className="px-6 py-4">
+<<<<<<< HEAD
                       <Badge
                       variant={
                       c.status === 'In Progress' ?
@@ -168,6 +240,9 @@ export function CaseManagementPage() {
                       'secondary'
                       }>
 
+=======
+                      <Badge variant={c.status === 'In Progress' ? 'warning' : c.status === 'Pending Judgment' ? 'danger' : 'secondary'}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         {c.status}
                       </Badge>
                     </td>
@@ -181,6 +256,7 @@ export function CaseManagementPage() {
                       {c.updated}
                     </td>
                     <td className="px-6 py-4 text-right">
+<<<<<<< HEAD
                       <Button
                       size="sm"
                       variant="ghost"
@@ -195,6 +271,16 @@ export function CaseManagementPage() {
                     </td>
                   </tr>
                 )}
+=======
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={e => {
+                    e.stopPropagation();
+                    handleCaseClick(c.id);
+                  }}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </tbody>
             </table>
           </div>
@@ -215,6 +301,7 @@ export function CaseManagementPage() {
           </div>
         </Card>
       </div>
+<<<<<<< HEAD
 
       <CreateCaseModal
         isOpen={showCreateModal}
@@ -222,4 +309,10 @@ export function CaseManagementPage() {
 
     </Layout>);
 
+=======
+      </NetworkAwareSkeleton>
+
+      <CreateCaseModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+    </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

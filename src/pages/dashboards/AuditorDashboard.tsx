@@ -1,10 +1,15 @@
+<<<<<<< HEAD
 import React from 'react';
+=======
+import React, { useState } from 'react';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
+<<<<<<< HEAD
 import {
   ShieldCheck,
   FileSearch,
@@ -18,6 +23,15 @@ import {
 export function AuditorDashboard() {
   return (
     <Layout title="Compliance Audit Log">
+=======
+import { ShieldCheck, FileSearch, AlertOctagon, Users, Download, Filter, Calendar, Eye } from 'lucide-react';
+export function AuditorDashboard() {
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [actionFilter, setActionFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
+  return <Layout title="Compliance Audit Log">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="space-y-6">
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
           <Eye className="h-5 w-5 text-amber-600" />
@@ -121,6 +135,7 @@ export function AuditorDashboard() {
                 <Filter className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Filter by user or action..."
+<<<<<<< HEAD
                   className="pl-9" />
 
               </div>
@@ -181,6 +196,53 @@ export function AuditorDashboard() {
               <div className="relative">
                 <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                 <Input type="date" className="pl-9" />
+=======
+                  className="pl-9"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+              <Select options={[{
+              value: 'all',
+              label: 'All Roles'
+            }, {
+              value: 'judge',
+              label: 'Judge'
+            }, {
+              value: 'lawyer',
+              label: 'Lawyer'
+            }, {
+              value: 'clerk',
+              label: 'Clerk'
+            }, {
+              value: 'admin',
+              label: 'Admin'
+            }]} value={roleFilter} onChange={e => setRoleFilter(e.target.value)} label="Role" />
+              <Select options={[{
+              value: 'all',
+              label: 'All Action Types'
+            }, {
+              value: 'create',
+              label: 'Creation'
+            }, {
+              value: 'update',
+              label: 'Update'
+            }, {
+              value: 'delete',
+              label: 'Deletion'
+            }, {
+              value: 'access',
+              label: 'Access'
+            }]} value={actionFilter} onChange={e => setActionFilter(e.target.value)} label="Action Type" />
+              <div className="relative">
+                <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  type="date"
+                  className="pl-9"
+                  value={dateFilter}
+                  onChange={e => setDateFilter(e.target.value)}
+                />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
             </div>
             <Button variant="secondary">Apply Filters</Button>
@@ -199,6 +261,7 @@ export function AuditorDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
+<<<<<<< HEAD
                 {[
                 {
                   time: '2023-10-24 14:32:11',
@@ -266,6 +329,65 @@ export function AuditorDashboard() {
                 }].
                 map((log, i) =>
                 <tr key={i} className="hover:bg-slate-50">
+=======
+                {[{
+                time: '2023-10-24 14:32:11',
+                user: 'Hon. Sarah Jenkins',
+                role: 'Judge',
+                action: 'Update Case',
+                resource: 'CASE-2023-001',
+                details: 'Added ruling notes'
+              }, {
+                time: '2023-10-24 14:28:45',
+                user: 'David Chen',
+                role: 'Clerk',
+                action: 'Upload Document',
+                resource: 'DOC-8821',
+                details: 'Evidence submission'
+              }, {
+                time: '2023-10-24 14:15:22',
+                user: 'System Admin',
+                role: 'IT Admin',
+                action: 'User Login',
+                resource: 'AUTH',
+                details: 'Successful login from 192.168.1.1'
+              }, {
+                time: '2023-10-24 13:55:01',
+                user: 'Elena Rodriguez',
+                role: 'Registrar',
+                action: 'Create Case',
+                resource: 'CASE-2023-042',
+                details: 'New filing registration'
+              }, {
+                time: '2023-10-24 13:42:18',
+                user: 'James Wright',
+                role: 'Lawyer',
+                action: 'View Document',
+                resource: 'DOC-8819',
+                details: 'Access granted'
+              }, {
+                time: '2023-10-24 13:30:05',
+                user: 'Hon. Michael Ross',
+                role: 'Judge',
+                action: 'Assign Hearing',
+                resource: 'SCHED-112',
+                details: 'Date set for Nov 12'
+              }, {
+                time: '2023-10-24 13:15:44',
+                user: 'System',
+                role: 'System',
+                action: 'Backup',
+                resource: 'DB-MAIN',
+                details: 'Automated hourly backup'
+              }, {
+                time: '2023-10-24 12:58:33',
+                user: 'David Chen',
+                role: 'Clerk',
+                action: 'Update Status',
+                resource: 'CASE-2023-001',
+                details: 'Changed to In Progress'
+              }].map((log, i) => <tr key={i} className="hover:bg-slate-50">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     <td className="px-6 py-4 font-mono text-slate-500 text-xs">
                       {log.time}
                     </td>
@@ -284,8 +406,12 @@ export function AuditorDashboard() {
                     <td className="px-6 py-4 text-slate-500 max-w-xs truncate">
                       {log.details}
                     </td>
+<<<<<<< HEAD
                   </tr>
                 )}
+=======
+                  </tr>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </tbody>
             </table>
           </div>
@@ -305,6 +431,7 @@ export function AuditorDashboard() {
           </div>
         </Card>
       </div>
+<<<<<<< HEAD
     </Layout>);
 
 }
@@ -325,4 +452,12 @@ function ActivityIcon(props: React.SVGProps<SVGSVGElement>) {
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
     </svg>);
 
+=======
+    </Layout>;
+}
+function ActivityIcon(props: React.SVGProps<SVGSVGElement>) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

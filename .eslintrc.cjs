@@ -15,4 +15,17 @@ module.exports = {
       { allowConstantExport: true },
     ],
   },
+<<<<<<< HEAD
+=======
+  overrides: [
+    {
+      files: ['backend/**/*.js', 'backend/**/*.jsx'],
+      env: { node: true, es2020: true },
+      rules: {
+        'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      },
+    },
+  ],
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }
