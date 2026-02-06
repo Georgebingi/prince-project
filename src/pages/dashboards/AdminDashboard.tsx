@@ -1,22 +1,50 @@
+<<<<<<< HEAD
+import React, { useMemo, useState } from 'react';
+=======
 import { useMemo, useState } from 'react';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
+<<<<<<< HEAD
+import {
+  Users,
+  Server,
+  Activity,
+  Database,
+  Shield,
+  Settings,
+  UserPlus,
+  FileText,
+  Download,
+  AlertTriangle,
+  CheckCircle,
+  X,
+  Bell,
+  Send } from
+'lucide-react';
+=======
 import { Users, Server, Activity, Database, Shield, Settings, UserPlus, FileText, Download, AlertTriangle, X, Bell, Send } from 'lucide-react';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { useStaff } from '../../contexts/StaffContext';
 import { useCases } from '../../contexts/CasesContext';
 import { useSystem } from '../../contexts/SystemContext';
 export function AdminDashboard() {
   const navigate = useNavigate();
+<<<<<<< HEAD
+  const { staff } = useStaff();
+  const { cases } = useCases();
+=======
   const {
     staff
   } = useStaff();
   const {
     cases
   } = useCases();
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const {
     settings,
     toggleMaintenanceMode,
@@ -32,7 +60,11 @@ export function AdminDashboard() {
   // Calculate dynamic stats
   const stats = useMemo(() => {
     const totalUsers = staff.length;
+<<<<<<< HEAD
+    const activeUsers = staff.filter((s) => s.status === 'Active').length;
+=======
     const activeUsers = staff.filter(s => s.status === 'active').length;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     const totalDocs = cases.reduce((acc, c) => acc + c.documents.length, 0);
     const storageUsed = (totalDocs * 2.5 + 45).toFixed(1);
     return {
@@ -64,7 +96,12 @@ export function AdminDashboard() {
     } else {
       addSystemNotification({
         title: 'Maintenance Mode Disabled',
+<<<<<<< HEAD
+        message:
+        'The system is now fully operational. All users can access normally.',
+=======
         message: 'The system is now fully operational. All users can access normally.',
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
         type: 'success',
         createdBy: 'System Administrator'
       });
@@ -87,10 +124,23 @@ export function AdminDashboard() {
     setShowNotificationModal(false);
     alert('Notification sent to all users!');
   };
+<<<<<<< HEAD
   return <Layout title="System Administration" showLogoBanner={false}>
+=======
+<<<<<<< HEAD
+  return (
+    <Layout title="System Administration">
+      <div className="space-y-6 print:hidden">
+        {/* Maintenance Mode Alert */}
+        {isMaintenanceActive() &&
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+=======
+  return <Layout title="System Administration">
+>>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
       <div className="space-y-6 print:hidden">
         {/* Maintenance Mode Alert */}
         {isMaintenanceActive() && <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
               <div className="flex-1">
@@ -101,11 +151,24 @@ export function AdminDashboard() {
                   System is in maintenance mode. Only administrators can access.
                 </p>
               </div>
+<<<<<<< HEAD
+              <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConfigModal(true)}>
+
+                Manage
+              </Button>
+            </div>
+          </div>
+        }
+=======
               <Button variant="outline" size="sm" onClick={() => setShowConfigModal(true)}>
                 Manage
               </Button>
             </div>
           </div>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 
         {/* System Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -118,7 +181,11 @@ export function AdminDashboard() {
                 </h3>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <Activity className="h-3 w-3 mr-1" />
+<<<<<<< HEAD
+                  {staff.filter((s) => s.status === 'Active').length} Active
+=======
                   {staff.filter(s => s.status === 'active').length} Active
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -182,6 +249,37 @@ export function AdminDashboard() {
           <div className="lg:col-span-2 space-y-6">
             {/* Quick Actions */}
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+<<<<<<< HEAD
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col gap-2 bg-white hover:bg-slate-50 border-slate-200"
+                onClick={() => navigate('/staff')}>
+
+                <UserPlus className="h-6 w-6 text-blue-600" />
+                <span>Add New User</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col gap-2 bg-white hover:bg-slate-50 border-slate-200"
+                onClick={() => setShowConfigModal(true)}>
+
+                <Settings className="h-6 w-6 text-slate-600" />
+                <span>System Config</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col gap-2 bg-white hover:bg-slate-50 border-slate-200"
+                onClick={handleGenerateAuditReport}>
+
+                <FileText className="h-6 w-6 text-amber-600" />
+                <span>Generate Audit Report</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col gap-2 bg-white hover:bg-slate-50 border-slate-200"
+                onClick={() => setShowNotificationModal(true)}>
+
+=======
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 bg-white hover:bg-slate-50 border-slate-200" onClick={() => navigate('/staff')}>
                 <UserPlus className="h-6 w-6 text-blue-600" />
                 <span>Add New User</span>
@@ -195,6 +293,7 @@ export function AdminDashboard() {
                 <span>Generate Audit Report</span>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-2 bg-white hover:bg-slate-50 border-slate-200" onClick={() => setShowNotificationModal(true)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <Bell className="h-6 w-6 text-purple-600" />
                 <span>Send Notification</span>
               </Button>
@@ -206,7 +305,15 @@ export function AdminDashboard() {
                 <h3 className="text-lg font-semibold text-slate-900">
                   Staff Management
                 </h3>
+<<<<<<< HEAD
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportStaffPDF}>
+
+=======
                 <Button variant="outline" size="sm" onClick={handleExportStaffPDF}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <Download className="h-4 w-4 mr-2" />
                   Export PDF Report
                 </Button>
@@ -224,7 +331,12 @@ export function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
+<<<<<<< HEAD
+                    {staff.slice(0, 5).map((user) =>
+                    <tr key={user.id} className="hover:bg-slate-50">
+=======
                     {staff.slice(0, 5).map(user => <tr key={user.id} className="hover:bg-slate-50">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <td className="px-4 py-3 font-medium text-slate-900">
                           {user.name}
                         </td>
@@ -234,6 +346,26 @@ export function AdminDashboard() {
                         <td className="px-4 py-3 text-slate-500">
                           {user.department}
                         </td>
+<<<<<<< HEAD
+                        <td className="px-4 py-3">
+                          <Badge
+                          variant={
+                          user.status === 'Active' ?
+                          'success' :
+                          user.status === 'Inactive' ?
+                          'secondary' :
+                          'danger'
+                          }>
+
+                            {user.status}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">
+                          {user.lastActive}
+                        </td>
+                      </tr>
+                    )}
+=======
                       <td className="px-4 py-3">
                         <Badge
                           variant={
@@ -259,11 +391,20 @@ export function AdminDashboard() {
                           {user.lastActive}
                         </td>
                       </tr>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   </tbody>
                 </table>
               </div>
               <div className="mt-4 text-center">
+<<<<<<< HEAD
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/staff')}>
+
+=======
                 <Button variant="ghost" size="sm" onClick={() => navigate('/staff')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   View All Users
                 </Button>
               </div>
@@ -330,7 +471,12 @@ export function AdminDashboard() {
       </div>
 
       {/* System Config Modal */}
+<<<<<<< HEAD
+      {showConfigModal &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm print:hidden">
+=======
       {showConfigModal && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm print:hidden">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
               <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
@@ -338,16 +484,33 @@ export function AdminDashboard() {
                 System Configuration
               </h2>
               <button
+<<<<<<< HEAD
+              onClick={() => setShowConfigModal(false)}
+              className="p-1 hover:bg-slate-100 rounded-full">
+
+=======
                 onClick={() => setShowConfigModal(false)}
                 className="p-1 hover:bg-slate-100 rounded-full"
                 aria-label="Close system configuration"
                 type="button"
               >
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-2">
+<<<<<<< HEAD
+                <label className="text-sm font-medium text-slate-700">
+                  System Name
+                </label>
+                <input
+                type="text"
+                value="Kaduna High Court Management System"
+                className="w-full p-2 border border-slate-300 rounded-md bg-slate-50"
+                readOnly />
+
+=======
                 <label className="text-sm font-medium text-slate-700" htmlFor="system-name">
                   System Name
                 </label>
@@ -359,6 +522,7 @@ export function AdminDashboard() {
                   readOnly
                   aria-readonly="true"
                 />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
@@ -367,17 +531,57 @@ export function AdminDashboard() {
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
                   <div className="flex items-center gap-2">
                     <button
+<<<<<<< HEAD
+                    onClick={handleToggleMaintenance}
+                    className={`w-12 h-6 rounded-full relative transition-colors ${settings.maintenanceMode ? 'bg-amber-500' : 'bg-slate-300'}`}>
+
+                      <div
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${settings.maintenanceMode ? 'left-7' : 'left-1'}`}>
+                    </div>
+=======
                       onClick={handleToggleMaintenance}
                       className={`w-12 h-6 rounded-full relative transition-colors ${settings.maintenanceMode ? 'bg-amber-500' : 'bg-slate-300'}`}
                       aria-label="Toggle maintenance mode"
                       type="button"
                     >
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${settings.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     </button>
                     <span className="text-sm text-slate-700">
                       {settings.maintenanceMode ? 'Enabled' : 'Disabled'}
                     </span>
                   </div>
+<<<<<<< HEAD
+                  {settings.maintenanceMode &&
+                <Badge variant="warning">Active</Badge>
+                }
+                </div>
+              </div>
+              {!settings.maintenanceMode &&
+            <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Maintenance Duration (minutes)
+                  </label>
+                  <input
+                type="number"
+                value={maintenanceDuration}
+                onChange={(e) =>
+                setMaintenanceDuration(Number(e.target.value))
+                }
+                className="w-full p-2 border border-slate-300 rounded-md" />
+
+                </div>
+            }
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Session Timeout (mins)
+                </label>
+                <input
+                type="number"
+                value={settings.sessionTimeout}
+                className="w-full p-2 border border-slate-300 rounded-md" />
+
+=======
                   {settings.maintenanceMode && <Badge variant="warning">Active</Badge>}
                 </div>
               </div>
@@ -405,6 +609,7 @@ export function AdminDashboard() {
                   className="w-full p-2 border border-slate-300 rounded-md"
                   aria-label="Session timeout in minutes"
                 />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
               <div className="p-4 bg-blue-50 rounded-md text-sm text-blue-700">
                 <p>
@@ -414,15 +619,31 @@ export function AdminDashboard() {
               </div>
             </div>
             <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+<<<<<<< HEAD
+              <Button
+              variant="outline"
+              onClick={() => setShowConfigModal(false)}>
+
+=======
               <Button variant="outline" onClick={() => setShowConfigModal(false)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 Close
               </Button>
             </div>
           </div>
+<<<<<<< HEAD
+        </div>
+      }
+
+      {/* Send Notification Modal */}
+      {showNotificationModal &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+=======
         </div>}
 
       {/* Send Notification Modal */}
       {showNotificationModal && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
               <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
@@ -430,21 +651,45 @@ export function AdminDashboard() {
                 Send System Notification
               </h2>
               <button
+<<<<<<< HEAD
+              onClick={() => setShowNotificationModal(false)}
+              className="p-1 hover:bg-slate-100 rounded-full">
+
+=======
                 onClick={() => setShowNotificationModal(false)}
                 className="p-1 hover:bg-slate-100 rounded-full"
                 aria-label="Close notification modal"
                 type="button"
               >
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
             <div className="p-6 space-y-4">
+<<<<<<< HEAD
+              <Input
+              label="Notification Title"
+              placeholder="e.g., Scheduled Maintenance"
+              value={notificationTitle}
+              onChange={(e) => setNotificationTitle(e.target.value)} />
+
+=======
               <Input label="Notification Title" placeholder="e.g., Scheduled Maintenance" value={notificationTitle} onChange={e => setNotificationTitle(e.target.value)} />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
                   Message
                 </label>
+<<<<<<< HEAD
+                <textarea
+                className="w-full h-32 p-3 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter notification message..."
+                value={notificationMessage}
+                onChange={(e) => setNotificationMessage(e.target.value)}>
+              </textarea>
+=======
                 <textarea className="w-full h-32 p-3 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Enter notification message..." value={notificationMessage} onChange={e => setNotificationMessage(e.target.value)}></textarea>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
               <div className="p-4 bg-blue-50 rounded-md text-sm text-blue-700">
                 <p>
@@ -454,7 +699,14 @@ export function AdminDashboard() {
               </div>
             </div>
             <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+<<<<<<< HEAD
+              <Button
+              variant="outline"
+              onClick={() => setShowNotificationModal(false)}>
+
+=======
               <Button variant="outline" onClick={() => setShowNotificationModal(false)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 Cancel
               </Button>
               <Button onClick={handleSendNotification}>
@@ -463,10 +715,19 @@ export function AdminDashboard() {
               </Button>
             </div>
           </div>
+<<<<<<< HEAD
+        </div>
+      }
+
+      {/* Audit Report Modal */}
+      {showAuditModal &&
+      <>
+=======
         </div>}
 
       {/* Audit Report Modal */}
       {showAuditModal && <>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           <style>{`
             @media print {
               body * {
@@ -496,18 +757,32 @@ export function AdminDashboard() {
                   <FileText className="h-5 w-5 text-slate-500" />
                   System Audit Report
                 </h2>
+<<<<<<< HEAD
+                <button
+                onClick={() => setShowAuditModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full">
+
+=======
               <button
                 onClick={() => setShowAuditModal(false)}
                 className="p-1 hover:bg-slate-100 rounded-full"
                 aria-label="Close audit report"
                 type="button"
               >
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <X className="h-5 w-5 text-slate-500" />
                 </button>
               </div>
 
               <div className="p-6 bg-slate-50 max-h-[60vh] overflow-y-auto print:bg-white print:max-h-none print:overflow-visible print:p-0">
+<<<<<<< HEAD
+                <div
+                id="printable-audit-report"
+                className="bg-white p-8 shadow-sm border border-slate-200 print:border-none print:shadow-none">
+
+=======
                 <div id="printable-audit-report" className="bg-white p-8 shadow-sm border border-slate-200 print:border-none print:shadow-none">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <div className="text-center mb-6 border-b border-slate-100 pb-4">
                     <h3 className="text-lg font-bold uppercase">
                       System Audit Report
@@ -569,7 +844,14 @@ export function AdminDashboard() {
               </div>
 
               <div className="p-6 border-t border-slate-200 bg-white flex justify-end gap-3 no-print">
+<<<<<<< HEAD
+                <Button
+                variant="outline"
+                onClick={() => setShowAuditModal(false)}>
+
+=======
                 <Button variant="outline" onClick={() => setShowAuditModal(false)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   Close
                 </Button>
                 <Button onClick={handleDownloadAuditReport}>
@@ -579,6 +861,13 @@ export function AdminDashboard() {
               </div>
             </div>
           </div>
+<<<<<<< HEAD
+        </>
+      }
+    </Layout>);
+
+=======
         </>}
     </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

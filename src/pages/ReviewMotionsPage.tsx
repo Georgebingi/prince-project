@@ -4,6 +4,28 @@ import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+<<<<<<< HEAD
+import {
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
+  FileText,
+  Clock,
+  X,
+  Download } from
+'lucide-react';
+import { useCases, Motion } from '../contexts/CasesContext';
+export function ReviewMotionsPage() {
+  const navigate = useNavigate();
+  const { motions, updateMotionStatus } = useCases();
+  const [selectedMotion, setSelectedMotion] = useState<Motion | null>(null);
+  // Filter only pending motions
+  const pendingMotions = motions.filter((m) => m.status === 'Pending');
+  const handleAction = (id: number, action: 'Approved' | 'Rejected') => {
+    if (
+    confirm(`Are you sure you want to ${action.toLowerCase()} this motion?`))
+    {
+=======
 import { ArrowLeft, CheckCircle, XCircle, FileText, Clock, X, Download } from 'lucide-react';
 import { useCases, Motion } from '../contexts/CasesContext';
 export function ReviewMotionsPage() {
@@ -17,14 +39,27 @@ export function ReviewMotionsPage() {
   const pendingMotions = motions.filter(m => m.status === 'Pending');
   const handleAction = (id: number, action: 'Approved' | 'Rejected') => {
     if (confirm(`Are you sure you want to ${action.toLowerCase()} this motion?`)) {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       updateMotionStatus(id, action);
       alert(`Motion ${action.toLowerCase()} successfully!`);
     }
   };
+<<<<<<< HEAD
+  return (
+    <Layout title="Review Motions">
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/dashboard')}>
+
+=======
   return <Layout title="Review Motions">
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
@@ -41,7 +76,16 @@ export function ReviewMotionsPage() {
           </div>
 
           <div className="divide-y divide-slate-100">
+<<<<<<< HEAD
+            {pendingMotions.length > 0 ?
+            pendingMotions.map((motion) =>
+            <div
+              key={motion.id}
+              className="p-6 hover:bg-slate-50 transition-colors">
+
+=======
             {pendingMotions.length > 0 ? pendingMotions.map(motion => <div key={motion.id} className="p-6 hover:bg-slate-50 transition-colors">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -62,6 +106,30 @@ export function ReviewMotionsPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
+<<<<<<< HEAD
+                      <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedMotion(motion)}>
+
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Document
+                      </Button>
+                      <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                    onClick={() => handleAction(motion.id, 'Rejected')}>
+
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject
+                      </Button>
+                      <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => handleAction(motion.id, 'Approved')}>
+
+=======
                       <Button variant="outline" size="sm" onClick={() => setSelectedMotion(motion)}>
                         <FileText className="h-4 w-4 mr-2" />
                         View Document
@@ -71,31 +139,56 @@ export function ReviewMotionsPage() {
                         Reject
                       </Button>
                       <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleAction(motion.id, 'Approved')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Approve
                       </Button>
                     </div>
                   </div>
+<<<<<<< HEAD
+                </div>
+            ) :
+
+            <div className="p-12 text-center text-slate-500">
+=======
                 </div>) : <div className="p-12 text-center text-slate-500">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500 opacity-50" />
                 <h3 className="text-lg font-medium text-slate-900">
                   All Caught Up!
                 </h3>
                 <p>No pending motions to review.</p>
+<<<<<<< HEAD
+              </div>
+            }
+=======
               </div>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           </div>
         </Card>
       </div>
 
       {/* View Document Modal */}
+<<<<<<< HEAD
+      {selectedMotion &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+=======
       {selectedMotion && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <FileText className="h-5 w-5 text-slate-400" />
                 {selectedMotion.title} - {selectedMotion.documentUrl}
               </h3>
+<<<<<<< HEAD
+              <button
+              onClick={() => setSelectedMotion(null)}
+              className="p-1 hover:bg-slate-100 rounded-full">
+
+=======
               <button onClick={() => setSelectedMotion(null)} className="p-1 hover:bg-slate-100 rounded-full" aria-label="Close motion viewer">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
@@ -109,7 +202,15 @@ export function ReviewMotionsPage() {
                 <p className="text-sm text-slate-400 mb-4">
                   In a real application, this would display the PDF content.
                 </p>
+<<<<<<< HEAD
+                <Button
+                onClick={() =>
+                alert(`Downloading ${selectedMotion.documentUrl}`)
+                }>
+
+=======
                 <Button onClick={() => alert(`Downloading ${selectedMotion.documentUrl}`)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <Download className="h-4 w-4 mr-2" />
                   Download to View
                 </Button>
@@ -120,6 +221,25 @@ export function ReviewMotionsPage() {
               <Button variant="outline" onClick={() => setSelectedMotion(null)}>
                 Close
               </Button>
+<<<<<<< HEAD
+              <Button
+              variant="outline"
+              className="text-red-600 border-red-200 hover:bg-red-50"
+              onClick={() => {
+                handleAction(selectedMotion.id, 'Rejected');
+                setSelectedMotion(null);
+              }}>
+
+                Reject
+              </Button>
+              <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                handleAction(selectedMotion.id, 'Approved');
+                setSelectedMotion(null);
+              }}>
+
+=======
               <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => {
             handleAction(selectedMotion.id, 'Rejected');
             setSelectedMotion(null);
@@ -130,10 +250,18 @@ export function ReviewMotionsPage() {
             handleAction(selectedMotion.id, 'Approved');
             setSelectedMotion(null);
           }}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 Approve
               </Button>
             </div>
           </div>
+<<<<<<< HEAD
+        </div>
+      }
+    </Layout>);
+
+=======
         </div>}
     </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

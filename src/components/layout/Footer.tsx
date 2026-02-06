@@ -1,7 +1,12 @@
 import React from 'react';
 import { Code2 } from 'lucide-react';
 export function Footer() {
+<<<<<<< HEAD
+  return (
+    <footer className="bg-white border-t border-slate-200 py-4 px-4 sm:px-6 lg:px-8">
+=======
   return <footer className="bg-white border-t border-slate-200 py-4 px-4 sm:px-6 lg:px-8">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
           <p className="text-slate-600 text-center sm:text-left">
@@ -23,5 +28,10 @@ export function Footer() {
           </div>
         </div>
       </div>
+<<<<<<< HEAD
+    </footer>);
+
+=======
     </footer>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

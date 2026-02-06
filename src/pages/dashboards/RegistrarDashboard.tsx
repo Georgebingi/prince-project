@@ -6,17 +6,37 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
+<<<<<<< HEAD
+import {
+  FolderOpen,
+  Calendar,
+  Clock,
+  FileText,
+  UserPlus,
+  CheckCircle,
+  AlertCircle,
+  Search,
+  Plus,
+  ArrowRight } from
+'lucide-react';
+=======
 import { FolderOpen, Calendar, Clock, FileText, UserPlus, CheckCircle, AlertCircle, Search, Plus, ArrowRight } from 'lucide-react';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { useCases } from '../../contexts/CasesContext';
 import { CreateCaseModal } from '../../components/CreateCaseModal';
 export function RegistrarDashboard() {
   const navigate = useNavigate();
+<<<<<<< HEAD
+  const { cases, assignCaseToCourt, scheduleHearing, approveCaseRegistration } =
+  useCases();
+=======
   const {
     cases,
     assignCaseToCourt,
     scheduleHearing,
     approveCaseRegistration
   } = useCases();
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const [showCreateModal, setShowCreateModal] = useState(false);
   // Modal States
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -31,6 +51,34 @@ export function RegistrarDashboard() {
   const stats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return {
+<<<<<<< HEAD
+      newFilings: cases.filter(
+        (c) => c.status === 'Filed' || c.status === 'Pending Approval'
+      ).length,
+      pendingAssignment: cases.filter((c) => !c.judge || c.status === 'Filed').
+      length,
+      hearingsToday: cases.filter((c) => c.nextHearing === today).length,
+      documentsProcessed: cases.reduce(
+        (acc, curr) => acc + curr.documents.length,
+        0
+      )
+    };
+  }, [cases]);
+  // Filter cases for lists
+  const pendingAssignmentCases = cases.
+  filter((c) => !c.judge || c.status === 'Filed').
+  slice(0, 5);
+  const pendingRegistrationCases = cases.
+  filter((c) => c.status === 'Pending Approval').
+  slice(0, 5);
+  const upcomingHearings = cases.
+  filter((c) => c.nextHearing && c.nextHearing !== 'TBD').
+  sort(
+    (a, b) =>
+    new Date(a.nextHearing).getTime() - new Date(b.nextHearing).getTime()
+  ).
+  slice(0, 5);
+=======
       newFilings: cases.filter(c => c.status === 'Filed' || c.status === 'Pending Approval').length,
       pendingAssignment: cases.filter(c => !c.judge || c.status === 'Filed').length,
       hearingsToday: cases.filter(c => c.nextHearing === today).length,
@@ -41,6 +89,7 @@ export function RegistrarDashboard() {
   const pendingAssignmentCases = cases.filter(c => !c.judge || c.status === 'Filed').slice(0, 5);
   const pendingRegistrationCases = cases.filter(c => c.status === 'Pending Approval').slice(0, 5);
   const upcomingHearings = cases.filter(c => c.nextHearing && c.nextHearing !== 'TBD').sort((a, b) => new Date(a.nextHearing).getTime() - new Date(b.nextHearing).getTime()).slice(0, 5);
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const handleAssignClick = (caseId: string) => {
     setSelectedCaseId(caseId);
     setShowAssignModal(true);
@@ -77,7 +126,12 @@ export function RegistrarDashboard() {
       alert('Case registration approved and filed!');
     }
   };
+<<<<<<< HEAD
+  return (
+    <Layout title="Registrar Dashboard">
+=======
   return <Layout title="Registrar Dashboard">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="space-y-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -149,12 +203,29 @@ export function RegistrarDashboard() {
                 <h3 className="text-lg font-semibold text-slate-900">
                   Pending Court Assignments
                 </h3>
+<<<<<<< HEAD
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/cases')}>
+
+=======
                 <Button variant="outline" size="sm" onClick={() => navigate('/cases')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   View All
                 </Button>
               </div>
               <div className="space-y-4">
+<<<<<<< HEAD
+                {pendingAssignmentCases.length > 0 ?
+                pendingAssignmentCases.map((c) =>
+                <div
+                  key={c.id}
+                  className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+=======
                 {pendingAssignmentCases.length > 0 ? pendingAssignmentCases.map(c => <div key={c.id} className="p-4 bg-slate-50 rounded-lg border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono text-xs font-bold text-slate-500">
@@ -174,10 +245,21 @@ export function RegistrarDashboard() {
                       <Button size="sm" onClick={() => handleAssignClick(c.id)}>
                         Assign to Court
                       </Button>
+<<<<<<< HEAD
+                    </div>
+                ) :
+
+                <div className="text-center py-8 text-slate-500">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500 opacity-50" />
+                    <p>No cases pending assignment.</p>
+                  </div>
+                }
+=======
                     </div>) : <div className="text-center py-8 text-slate-500">
                     <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500 opacity-50" />
                     <p>No cases pending assignment.</p>
                   </div>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
             </Card>
 
@@ -187,13 +269,30 @@ export function RegistrarDashboard() {
                 <h3 className="text-lg font-semibold text-slate-900">
                   Pending Case Registrations
                 </h3>
+<<<<<<< HEAD
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCreateModal(true)}>
+
+=======
                 <Button variant="outline" size="sm" onClick={() => setShowCreateModal(true)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <Plus className="h-4 w-4 mr-2" />
                   New Registration
                 </Button>
               </div>
               <div className="space-y-4">
+<<<<<<< HEAD
+                {pendingRegistrationCases.length > 0 ?
+                pendingRegistrationCases.map((c) =>
+                <div
+                  key={c.id}
+                  className="p-4 bg-amber-50 rounded-lg border border-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+=======
                 {pendingRegistrationCases.length > 0 ? pendingRegistrationCases.map(c => <div key={c.id} className="p-4 bg-amber-50 rounded-lg border border-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Badge variant="warning" className="text-[10px]">
@@ -210,6 +309,23 @@ export function RegistrarDashboard() {
                           Submitted: {c.filed}
                         </p>
                       </div>
+<<<<<<< HEAD
+                      <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleReviewClick(c.id)}>
+
+                        Review
+                      </Button>
+                    </div>
+                ) :
+
+                <div className="text-center py-8 text-slate-500">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500 opacity-50" />
+                    <p>No pending registrations.</p>
+                  </div>
+                }
+=======
                       <Button size="sm" variant="outline" onClick={() => handleReviewClick(c.id)}>
                         Review
                       </Button>
@@ -217,6 +333,7 @@ export function RegistrarDashboard() {
                     <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500 opacity-50" />
                     <p>No pending registrations.</p>
                   </div>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
             </Card>
           </div>
@@ -229,15 +346,28 @@ export function RegistrarDashboard() {
                 Upcoming Hearings
               </h3>
               <div className="space-y-4">
+<<<<<<< HEAD
+                {upcomingHearings.map((c) =>
+                <div
+                  key={c.id}
+                  className="flex gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0">
+
+=======
                 {upcomingHearings.map(c => <div key={c.id} className="flex gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     <div className="flex flex-col items-center justify-center w-12 h-12 bg-blue-50 rounded-lg text-blue-700">
                       <span className="text-xs font-bold">
                         {new Date(c.nextHearing).getDate()}
                       </span>
                       <span className="text-[10px] uppercase">
                         {new Date(c.nextHearing).toLocaleString('default', {
+<<<<<<< HEAD
+                        month: 'short'
+                      })}
+=======
                       month: 'short'
                     })}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       </span>
                     </div>
                     <div className="flex-1">
@@ -249,12 +379,24 @@ export function RegistrarDashboard() {
                         <Badge variant="secondary" className="text-[10px]">
                           {c.court || 'Unassigned'}
                         </Badge>
+<<<<<<< HEAD
+                        <button
+                        className="text-xs text-primary hover:underline"
+                        onClick={() => handleScheduleClick(c.id)}>
+
+=======
                         <button className="text-xs text-primary hover:underline" onClick={() => handleScheduleClick(c.id)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                           Reschedule
                         </button>
                       </div>
                     </div>
+<<<<<<< HEAD
+                  </div>
+                )}
+=======
                   </div>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <Button variant="outline" className="w-full mt-2" size="sm">
                   View Calendar
                 </Button>
@@ -267,6 +409,31 @@ export function RegistrarDashboard() {
                 Quick Actions
               </h3>
               <div className="space-y-2">
+<<<<<<< HEAD
+                <Button
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={() => setShowCreateModal(true)}>
+
+                  <Plus className="h-4 w-4 mr-2" />
+                  Register New Case
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={() => navigate('/cases')}>
+
+                  <Search className="h-4 w-4 mr-2" />
+                  Search Registry
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={() => navigate('/documents')}>
+
+=======
                 <Button className="w-full justify-start" size="sm" onClick={() => setShowCreateModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Register New Case
@@ -276,6 +443,7 @@ export function RegistrarDashboard() {
                   Search Registry
                 </Button>
                 <Button variant="outline" className="w-full justify-start" size="sm" onClick={() => navigate('/documents')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <FileText className="h-4 w-4 mr-2" />
                   Process Documents
                 </Button>
@@ -285,6 +453,68 @@ export function RegistrarDashboard() {
         </div>
       </div>
 
+<<<<<<< HEAD
+      <CreateCaseModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)} />
+
+
+      {/* Assign Court Modal */}
+      {showAssignModal &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">Assign Case to Court</h3>
+            <div className="space-y-4">
+              <Select
+              label="Select Court"
+              value={assignCourt}
+              onChange={(e) => setAssignCourt(e.target.value)}
+              options={[
+              {
+                value: 'High Court 1',
+                label: 'High Court 1'
+              },
+              {
+                value: 'High Court 2',
+                label: 'High Court 2'
+              },
+              {
+                value: 'High Court 3',
+                label: 'High Court 3'
+              },
+              {
+                value: 'Magistrate Court',
+                label: 'Magistrate Court'
+              }]
+              }
+              placeholder="Choose Court..." />
+
+              <Select
+              label="Assign Judge"
+              value={assignJudge}
+              onChange={(e) => setAssignJudge(e.target.value)}
+              options={[
+              {
+                value: 'Hon. Justice Ibrahim',
+                label: 'Hon. Justice Ibrahim'
+              },
+              {
+                value: 'Hon. Justice Sani',
+                label: 'Hon. Justice Sani'
+              },
+              {
+                value: 'Hon. Justice Maryam',
+                label: 'Hon. Justice Maryam'
+              }]
+              }
+              placeholder="Choose Judge..." />
+
+              <div className="flex justify-end gap-2 mt-6">
+                <Button
+                variant="outline"
+                onClick={() => setShowAssignModal(false)}>
+
+=======
       <CreateCaseModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
 
       {/* Assign Court Modal */}
@@ -317,12 +547,34 @@ export function RegistrarDashboard() {
           }]} placeholder="Choose Judge..." />
               <div className="flex justify-end gap-2 mt-6">
                 <Button variant="outline" onClick={() => setShowAssignModal(false)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   Cancel
                 </Button>
                 <Button onClick={submitAssignment}>Assign Case</Button>
               </div>
             </div>
           </div>
+<<<<<<< HEAD
+        </div>
+      }
+
+      {/* Schedule Hearing Modal */}
+      {showHearingModal &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">Schedule Hearing</h3>
+            <Input
+            label="Hearing Date"
+            type="date"
+            value={hearingDate}
+            onChange={(e) => setHearingDate(e.target.value)} />
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+              variant="outline"
+              onClick={() => setShowHearingModal(false)}>
+
+=======
         </div>}
 
       {/* Schedule Hearing Modal */}
@@ -332,15 +584,25 @@ export function RegistrarDashboard() {
             <Input label="Hearing Date" type="date" value={hearingDate} onChange={e => setHearingDate(e.target.value)} />
             <div className="flex justify-end gap-2 mt-6">
               <Button variant="outline" onClick={() => setShowHearingModal(false)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 Cancel
               </Button>
               <Button onClick={submitHearing}>Schedule</Button>
             </div>
           </div>
+<<<<<<< HEAD
+        </div>
+      }
+
+      {/* Review Registration Modal */}
+      {showReviewModal && selectedCaseId &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+=======
         </div>}
 
       {/* Review Registration Modal */}
       {showReviewModal && selectedCaseId && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold mb-4">
               Review Case Registration
@@ -351,11 +613,19 @@ export function RegistrarDashboard() {
               </p>
               <p className="text-sm text-slate-600 mb-2">
                 <strong>Title:</strong>{' '}
+<<<<<<< HEAD
+                {cases.find((c) => c.id === selectedCaseId)?.title}
+              </p>
+              <p className="text-sm text-slate-600">
+                <strong>Type:</strong>{' '}
+                {cases.find((c) => c.id === selectedCaseId)?.type}
+=======
                 {cases.find(c => c.id === selectedCaseId)?.title}
               </p>
               <p className="text-sm text-slate-600">
                 <strong>Type:</strong>{' '}
                 {cases.find(c => c.id === selectedCaseId)?.type}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </p>
             </div>
             <p className="text-sm text-slate-500 mb-6">
@@ -363,14 +633,34 @@ export function RegistrarDashboard() {
               available for court assignment.
             </p>
             <div className="flex justify-end gap-2">
+<<<<<<< HEAD
+              <Button
+              variant="outline"
+              onClick={() => setShowReviewModal(false)}>
+
+                Cancel
+              </Button>
+              <Button
+              onClick={submitApproval}
+              className="bg-green-600 hover:bg-green-700">
+
+=======
               <Button variant="outline" onClick={() => setShowReviewModal(false)}>
                 Cancel
               </Button>
               <Button onClick={submitApproval} className="bg-green-600 hover:bg-green-700">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 Approve & File
               </Button>
             </div>
           </div>
+<<<<<<< HEAD
+        </div>
+      }
+    </Layout>);
+
+=======
         </div>}
     </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

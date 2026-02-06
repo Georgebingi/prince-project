@@ -19,7 +19,13 @@ interface SystemContextType {
   settings: SystemSettings;
   notifications: SystemNotification[];
   toggleMaintenanceMode: (duration?: number) => void;
+<<<<<<< HEAD
+  addSystemNotification: (
+  notification: Omit<SystemNotification, 'id' | 'createdAt'>)
+  => void;
+=======
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'createdAt'>) => void;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   clearNotification: (id: string) => void;
   isMaintenanceActive: () => boolean;
 }
@@ -31,6 +37,10 @@ const INITIAL_SETTINGS: SystemSettings = {
   sessionTimeout: 30
 };
 const INITIAL_NOTIFICATIONS: SystemNotification[] = [];
+<<<<<<< HEAD
+export function SystemProvider({ children }: {children: ReactNode;}) {
+  const { user } = useAuth();
+=======
 export function SystemProvider({
   children
 }: {
@@ -39,14 +49,24 @@ export function SystemProvider({
   const {
     user
   } = useAuth();
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem('system_settings');
     return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
   });
+<<<<<<< HEAD
+  const [notifications, setNotifications] = useState<SystemNotification[]>(
+    () => {
+      const saved = localStorage.getItem('system_notifications');
+      return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+    }
+  );
+=======
   const [notifications, setNotifications] = useState<SystemNotification[]>(() => {
     const saved = localStorage.getItem('system_notifications');
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
   });
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   useEffect(() => {
     localStorage.setItem('system_settings', JSON.stringify(settings));
   }, [settings]);
@@ -61,7 +81,11 @@ export function SystemProvider({
       const now = Date.now();
       if (now >= endTime) {
         // Maintenance period has expired
+<<<<<<< HEAD
+        setSettings((prev) => ({
+=======
         setSettings(prev => ({
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           ...prev,
           maintenanceMode: false,
           maintenanceStartTime: null
@@ -69,7 +93,11 @@ export function SystemProvider({
       } else {
         // Set timeout to disable maintenance mode automatically
         const timeoutId = setTimeout(() => {
+<<<<<<< HEAD
+          setSettings((prev) => ({
+=======
           setSettings(prev => ({
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             ...prev,
             maintenanceMode: false,
             maintenanceStartTime: null
@@ -78,9 +106,19 @@ export function SystemProvider({
         return () => clearTimeout(timeoutId);
       }
     }
+<<<<<<< HEAD
+  }, [
+  settings.maintenanceMode,
+  settings.maintenanceStartTime,
+  settings.maintenanceDuration]
+  );
+  const toggleMaintenanceMode = (duration?: number) => {
+    setSettings((prev) => {
+=======
   }, [settings.maintenanceMode, settings.maintenanceStartTime, settings.maintenanceDuration]);
   const toggleMaintenanceMode = (duration?: number) => {
     setSettings(prev => {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       const newMode = !prev.maintenanceMode;
       return {
         ...prev,
@@ -90,12 +128,28 @@ export function SystemProvider({
       };
     });
   };
+<<<<<<< HEAD
+  const addSystemNotification = (
+  notification: Omit<SystemNotification, 'id' | 'createdAt'>) =>
+  {
+=======
   const addSystemNotification = (notification: Omit<SystemNotification, 'id' | 'createdAt'>) => {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     const newNotification: SystemNotification = {
       ...notification,
       id: `notif-${Date.now()}`,
       createdAt: new Date().toISOString()
     };
+<<<<<<< HEAD
+    setNotifications((prev) => [newNotification, ...prev]);
+  };
+  const clearNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+  const isMaintenanceActive = () => {
+    if (!settings.maintenanceMode || !settings.maintenanceStartTime)
+    return false;
+=======
     setNotifications(prev => [newNotification, ...prev]);
   };
   const clearNotification = (id: string) => {
@@ -103,12 +157,32 @@ export function SystemProvider({
   };
   const isMaintenanceActive = () => {
     if (!settings.maintenanceMode || !settings.maintenanceStartTime) return false;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     const startTime = new Date(settings.maintenanceStartTime).getTime();
     const endTime = startTime + settings.maintenanceDuration * 60 * 1000;
     const now = Date.now();
     return now < endTime;
   };
   // Filter notifications for the current user
+<<<<<<< HEAD
+  const filteredNotifications = notifications.filter(
+    (n) => !n.recipientId || user && n.recipientId === user.staffId
+  );
+  return (
+    <SystemContext.Provider
+      value={{
+        settings,
+        notifications: filteredNotifications,
+        toggleMaintenanceMode,
+        addSystemNotification,
+        clearNotification,
+        isMaintenanceActive
+      }}>
+
+      {children}
+    </SystemContext.Provider>);
+
+=======
   const filteredNotifications = notifications.filter(n => !n.recipientId || user && n.recipientId === user.staffId);
   return <SystemContext.Provider value={{
     settings,
@@ -120,6 +194,7 @@ export function SystemProvider({
   }}>
       {children}
     </SystemContext.Provider>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }
 export function useSystem() {
   const context = useContext(SystemContext);

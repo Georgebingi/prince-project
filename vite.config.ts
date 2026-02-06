@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+
   server: {
   // Allow ngrok/public hosts to access the Vite dev server during demos.
   // Use `true` to allow all hosts (typed-safe). For safety, replace with an array of exact hostnames, e.g.:
@@ -17,4 +18,5 @@ export default defineConfig({
       },
     },
   },
+
 })

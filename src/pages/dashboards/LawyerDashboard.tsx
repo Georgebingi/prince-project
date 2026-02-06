@@ -4,48 +4,99 @@ import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+<<<<<<< HEAD
+import {
+  Briefcase,
+  Calendar,
+  FileText,
+  Clock,
+  Plus,
+  Search,
+  MessageSquare,
+  ArrowRight } from
+'lucide-react';
+=======
 import { Briefcase, Calendar, FileText, Clock, Plus, Search, MessageSquare, ArrowRight } from 'lucide-react';
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 import { useCases } from '../../contexts/CasesContext';
 import { useAuth } from '../../contexts/AuthContext';
 export function LawyerDashboard() {
   const navigate = useNavigate();
+<<<<<<< HEAD
+  const { cases } = useCases();
+  const { user } = useAuth();
+=======
   const {
     cases
   } = useCases();
   const {
     user
   } = useAuth();
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   // Filter cases assigned to the current lawyer
   // In a real app, we'd use the logged-in user's name or ID
   // For demo purposes, we'll match "Barrister Musa" or show all if no lawyer assigned
   const lawyerName = user?.name || 'Barrister Musa';
+<<<<<<< HEAD
+  const myCases = cases.filter(
+    (c) =>
+    c.lawyer === lawyerName ||
+    c.lawyer === 'Barr. Musa' ||
+    // Handle variations
+    // Fallback for demo: show some cases if none assigned
+    !c.lawyer && (c.id === 'KDH/2024/001' || c.id === 'KDH/2024/022')
+  );
+  const activeCases = myCases.slice(0, 5).map((c) => ({
+=======
   const myCases = cases.filter(c => c.lawyer === lawyerName || c.lawyer === 'Barr. Musa' ||
   // Handle variations
   // Fallback for demo: show some cases if none assigned
   !c.lawyer && (c.id === 'KDH/2024/001' || c.id === 'KDH/2024/022'));
   const activeCases = myCases.slice(0, 5).map(c => ({
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: c.id,
     title: c.title,
     status: c.status,
     nextDate: c.nextHearing !== 'TBD' ? c.nextHearing : 'Not Scheduled'
   }));
+<<<<<<< HEAD
+  const recentDocuments = [
+  {
+=======
   const recentDocuments = [{
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     name: 'Defense Motion.pdf',
     case: 'KDH/2024/001',
     date: '2 hours ago',
     status: 'Filed'
+<<<<<<< HEAD
+  },
+  {
+=======
   }, {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     name: 'Affidavit of Service.pdf',
     case: 'KDH/2024/022',
     date: 'Yesterday',
     status: 'Approved'
+<<<<<<< HEAD
+  },
+  {
+=======
   }, {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     name: 'Evidence Bundle A.zip',
     case: 'KDH/2024/051',
     date: 'Jan 12',
     status: 'Pending Review'
   }];
+<<<<<<< HEAD
+
+  return (
+    <Layout title="Legal Practitioner Portal">
+=======
   return <Layout title="Legal Practitioner Portal">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-blue-900 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
@@ -61,11 +112,26 @@ export function LawyerDashboard() {
               requiring your attention.
             </p>
             <div className="mt-6 flex gap-3">
+<<<<<<< HEAD
+              <Button
+                className="bg-white text-blue-900 hover:bg-blue-50 border-none"
+                onClick={() => navigate('/cases')}>
+
+                <Plus className="h-4 w-4 mr-2" />
+                File New Case
+              </Button>
+              <Button
+                variant="outline"
+                className="text-white border-white hover:bg-white/10"
+                onClick={() => navigate('/cases')}>
+
+=======
               <Button className="bg-white text-blue-900 hover:bg-blue-50 border-none" onClick={() => navigate('/cases')}>
                 <Plus className="h-4 w-4 mr-2" />
                 File New Case
               </Button>
               <Button variant="outline" className="text-white border-white hover:bg-white/10" onClick={() => navigate('/cases')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <Search className="h-4 w-4 mr-2" />
                 Search Records
               </Button>
@@ -81,12 +147,32 @@ export function LawyerDashboard() {
                 <h3 className="text-lg font-semibold text-slate-900">
                   My Active Cases
                 </h3>
+<<<<<<< HEAD
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => navigate('/cases')}>
+
+=======
                 <Button size="sm" variant="ghost" onClick={() => navigate('/cases')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   View All
                 </Button>
               </div>
               <div className="space-y-4">
+<<<<<<< HEAD
+                {activeCases.length > 0 ?
+                activeCases.map((c) =>
+                <div
+                  key={c.id}
+                  className="group flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer"
+                  onClick={() =>
+                  navigate(`/cases/${encodeURIComponent(c.id)}`)
+                  }>
+
+=======
                 {activeCases.length > 0 ? activeCases.map(c => <div key={c.id} className="group flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer" onClick={() => navigate(`/cases/${encodeURIComponent(c.id)}`)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
@@ -107,10 +193,21 @@ export function LawyerDashboard() {
                           Next Hearing
                         </span>
                       </div>
+<<<<<<< HEAD
+                    </div>
+                ) :
+
+                <div className="text-center py-8 text-slate-500">
+                    <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                    <p>No active cases assigned.</p>
+                  </div>
+                }
+=======
                     </div>) : <div className="text-center py-8 text-slate-500">
                     <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-20" />
                     <p>No active cases assigned.</p>
                   </div>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </div>
             </Card>
 
@@ -119,7 +216,15 @@ export function LawyerDashboard() {
                 <h3 className="text-lg font-semibold text-slate-900">
                   Recent Filings
                 </h3>
+<<<<<<< HEAD
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => navigate('/documents')}>
+
+=======
                 <Button size="sm" variant="ghost" onClick={() => navigate('/documents')}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   Go to Repository
                 </Button>
               </div>
@@ -134,7 +239,18 @@ export function LawyerDashboard() {
                     </tr>
                   </thead>
                   <tbody>
+<<<<<<< HEAD
+                    {recentDocuments.map((doc, idx) =>
+                    <tr
+                      key={idx}
+                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                      onClick={() =>
+                      navigate(`/cases/${encodeURIComponent(doc.case)}`)
+                      }>
+
+=======
                     {recentDocuments.map((doc, idx) => <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => navigate(`/cases/${encodeURIComponent(doc.case)}`)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2">
                           <FileText className="h-4 w-4 text-slate-400" />
                           {doc.name}
@@ -142,11 +258,28 @@ export function LawyerDashboard() {
                         <td className="px-4 py-3 text-slate-600">{doc.case}</td>
                         <td className="px-4 py-3 text-slate-500">{doc.date}</td>
                         <td className="px-4 py-3">
+<<<<<<< HEAD
+                          <Badge
+                          variant={
+                          doc.status === 'Filed' ?
+                          'success' :
+                          doc.status === 'Approved' ?
+                          'success' :
+                          'warning'
+                          }>
+
+                            {doc.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    )}
+=======
                           <Badge variant={doc.status === 'Filed' ? 'success' : doc.status === 'Approved' ? 'success' : 'warning'}>
                             {doc.status}
                           </Badge>
                         </td>
                       </tr>)}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   </tbody>
                 </table>
               </div>
@@ -160,7 +293,16 @@ export function LawyerDashboard() {
                 Notifications
               </h3>
               <div className="space-y-4">
+<<<<<<< HEAD
+                <div
+                  className="flex gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
+                  onClick={() =>
+                  navigate(`/cases/${encodeURIComponent('KDH/2024/001')}`)
+                  }>
+
+=======
                 <div className="flex gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors" onClick={() => navigate(`/cases/${encodeURIComponent('KDH/2024/001')}`)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                     <MessageSquare className="h-4 w-4 text-blue-600" />
                   </div>
@@ -172,7 +314,16 @@ export function LawyerDashboard() {
                     <p className="text-xs text-slate-500 mt-1">10 mins ago</p>
                   </div>
                 </div>
+<<<<<<< HEAD
+                <div
+                  className="flex gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
+                  onClick={() =>
+                  navigate(`/cases/${encodeURIComponent('KDH/2024/051')}`)
+                  }>
+
+=======
                 <div className="flex gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors" onClick={() => navigate(`/cases/${encodeURIComponent('KDH/2024/051')}`)}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                     <Clock className="h-4 w-4 text-amber-600" />
                   </div>
@@ -202,5 +353,10 @@ export function LawyerDashboard() {
           </div>
         </div>
       </div>
+<<<<<<< HEAD
+    </Layout>);
+
+=======
     </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

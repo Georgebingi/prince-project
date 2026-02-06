@@ -15,6 +15,8 @@ module.exports = {
       { allowConstantExport: true },
     ],
   },
+<<<<<<< HEAD
+=======
   overrides: [
     {
       files: ['backend/**/*.js', 'backend/**/*.jsx'],
@@ -25,4 +27,5 @@ module.exports = {
       },
     },
   ],
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

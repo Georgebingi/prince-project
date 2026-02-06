@@ -14,11 +14,22 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
+<<<<<<< HEAD
+  const baseStyles =
+  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+  const variants = {
+    primary:
+    'bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm',
+    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
+    outline:
+    'border border-slate-300 bg-transparent hover:bg-slate-100 text-slate-700',
+=======
   const baseStyles = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
   const variants = {
     primary: 'bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm',
     secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
     outline: 'border border-slate-300 bg-transparent hover:bg-slate-100 text-slate-700',
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     ghost: 'hover:bg-slate-100 text-slate-700',
     danger: 'bg-danger text-white hover:bg-red-700 shadow-sm'
   };
@@ -27,8 +38,21 @@ export function Button({
     md: 'h-10 px-4 py-2 text-sm',
     lg: 'h-12 px-8 text-base'
   };
+<<<<<<< HEAD
+  return (
+    <button
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      disabled={disabled || isLoading}
+      {...props}>
+
+      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {children}
+    </button>);
+
+=======
   return <button className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`} disabled={disabled || isLoading} {...props}>
       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {children}
     </button>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

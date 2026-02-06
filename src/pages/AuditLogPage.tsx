@@ -18,7 +18,16 @@ interface AuditLog {
 export function AuditLogPage() {
   const [filterUser, setFilterUser] = useState('');
   const [filterAction, setFilterAction] = useState('');
+<<<<<<< HEAD
   const logs: AuditLog[] = [{
+=======
+<<<<<<< HEAD
+  const [logs, setLogs] = useState<AuditLog[]>([
+  {
+=======
+  const [logs, setLogs] = useState<AuditLog[]>([{
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+>>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
     id: 'LOG-001',
     user: 'Hon. Justice Ibrahim',
     action: 'Viewed Case Details',
@@ -26,7 +35,12 @@ export function AuditLogPage() {
     timestamp: '2024-01-20 10:30:45',
     status: 'Success',
     ip: '192.168.1.10'
+<<<<<<< HEAD
+  },
+  {
+=======
   }, {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: 'LOG-002',
     user: 'Registrar Bello',
     action: 'Uploaded Document',
@@ -34,7 +48,12 @@ export function AuditLogPage() {
     timestamp: '2024-01-20 10:15:22',
     status: 'Success',
     ip: '192.168.1.15'
+<<<<<<< HEAD
+  },
+  {
+=======
   }, {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: 'LOG-003',
     user: 'System Admin',
     action: 'Failed Login Attempt',
@@ -42,7 +61,12 @@ export function AuditLogPage() {
     timestamp: '2024-01-20 09:45:00',
     status: 'Failed',
     ip: '203.0.113.42'
+<<<<<<< HEAD
+  },
+  {
+=======
   }, {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: 'LOG-004',
     user: 'Clerk Amina',
     action: 'Updated Case Status',
@@ -50,7 +74,12 @@ export function AuditLogPage() {
     timestamp: '2024-01-20 09:30:11',
     status: 'Success',
     ip: '192.168.1.20'
+<<<<<<< HEAD
+  },
+  {
+=======
   }, {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: 'LOG-005',
     user: 'Barrister Musa',
     action: 'Filed Motion',
@@ -58,10 +87,26 @@ export function AuditLogPage() {
     timestamp: '2024-01-19 16:20:33',
     status: 'Success',
     ip: '10.0.0.5'
+<<<<<<< HEAD
   }];
+=======
+<<<<<<< HEAD
+  }]
+  );
+  const filteredLogs = logs.filter((log) => {
+    const matchesUser =
+    filterUser === '' ||
+    log.user.toLowerCase().includes(filterUser.toLowerCase());
+    const matchesAction =
+    filterAction === '' ||
+    log.action.toLowerCase().includes(filterAction.toLowerCase());
+=======
+  }]);
+>>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
   const filteredLogs = logs.filter(log => {
     const matchesUser = filterUser === '' || log.user.toLowerCase().includes(filterUser.toLowerCase());
     const matchesAction = filterAction === '' || log.action.toLowerCase().includes(filterAction.toLowerCase());
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     return matchesUser && matchesAction;
   });
   const handleExportPDF = () => {
@@ -72,20 +117,81 @@ export function AuditLogPage() {
     // Here, the filtering is already reactive, but we can show a feedback
     alert(`Filters applied! Showing ${filteredLogs.length} results.`);
   };
+<<<<<<< HEAD
   return <Layout title="Audit Logs & Compliance" showLogoBanner={true}>
+=======
+<<<<<<< HEAD
+  return (
+    <Layout title="Audit Logs & Compliance">
+=======
+  return <Layout title="Audit Logs & Compliance">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+>>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
       <div className="space-y-6">
         {/* Filters Card - Hide in print */}
         <div className="print:hidden">
           <Card>
             <div className="flex flex-col md:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
                 <Input
                   label="Search User"
                   placeholder="e.g. Ibrahim"
                   value={filterUser}
+<<<<<<< HEAD
                   onChange={e => setFilterUser(e.target.value)}
                   icon={<Search className="h-4 w-4" />}
                 />
+=======
+                  onChange={(e) => setFilterUser(e.target.value)} />
+
+              </div>
+              <div className="flex-1 w-full">
+                <Input
+                  label="Search Action"
+                  placeholder="e.g. Login, Upload"
+                  value={filterAction}
+                  onChange={(e) => setFilterAction(e.target.value)} />
+
+              </div>
+              <div className="flex-1 w-full">
+                <Select
+                  label="Status"
+                  options={[
+                  {
+                    value: 'all',
+                    label: 'All Statuses'
+                  },
+                  {
+                    value: 'success',
+                    label: 'Success'
+                  },
+                  {
+                    value: 'failed',
+                    label: 'Failed'
+                  },
+                  {
+                    value: 'warning',
+                    label: 'Warning'
+                  }]
+                  }
+                  placeholder="Select Status" />
+
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilterUser('');
+                    setFilterAction('');
+                  }}>
+
+=======
+                <Input label="Search User" placeholder="e.g. Ibrahim" value={filterUser} onChange={e => setFilterUser(e.target.value)} />
+>>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
               </div>
               <div className="flex-1 w-full">
                 <Input
@@ -116,6 +222,7 @@ export function AuditLogPage() {
                 setFilterUser('');
                 setFilterAction('');
               }}>
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <RefreshCw className="h-4 w-4" />
                 </Button>
                 <Button onClick={handleApplyFilters}>
@@ -165,7 +272,13 @@ export function AuditLogPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
+<<<<<<< HEAD
+                {filteredLogs.length > 0 ?
+                filteredLogs.map((log) =>
+                <tr key={log.id} className="hover:bg-slate-50">
+=======
                 {filteredLogs.length > 0 ? filteredLogs.map(log => <tr key={log.id} className="hover:bg-slate-50">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                       <td className="px-6 py-4 font-mono text-xs text-slate-500">
                         {log.timestamp}
                       </td>
@@ -180,6 +293,32 @@ export function AuditLogPage() {
                         {log.ip}
                       </td>
                       <td className="px-6 py-4">
+<<<<<<< HEAD
+                        <Badge
+                      variant={
+                      log.status === 'Success' ?
+                      'success' :
+                      log.status === 'Failed' ?
+                      'danger' :
+                      'warning'
+                      }>
+
+                          {log.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                ) :
+
+                <tr>
+                    <td
+                    colSpan={6}
+                    className="px-6 py-12 text-center text-slate-500">
+
+                      No logs found matching your filters.
+                    </td>
+                  </tr>
+                }
+=======
                         <Badge variant={log.status === 'Success' ? 'success' : log.status === 'Failed' ? 'danger' : 'warning'}>
                           {log.status}
                         </Badge>
@@ -189,6 +328,7 @@ export function AuditLogPage() {
                       No logs found matching your filters.
                     </td>
                   </tr>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               </tbody>
             </table>
           </div>
@@ -201,5 +341,10 @@ export function AuditLogPage() {
           </div>
         </Card>
       </div>
+<<<<<<< HEAD
+    </Layout>);
+
+=======
     </Layout>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

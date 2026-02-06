@@ -1,3 +1,18 @@
+<<<<<<< HEAD
+import React, { useEffect, useState, createContext, useContext } from 'react';
+export type UserRole =
+'judge' |
+'registrar' |
+'clerk' |
+'admin' |
+'it_admin' |
+'court_admin' |
+'lawyer' |
+'auditor' |
+'partner';
+interface User {
+  name: string;
+=======
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
 import { authApi, ApiError } from '../services/api';
@@ -8,10 +23,20 @@ interface User {
   id?: string;
   name: string;
   email?: string;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   role: UserRole;
   staffId: string;
   department?: string;
 }
+<<<<<<< HEAD
+interface AuthContextType {
+  user: User | null;
+  login: (role: UserRole, username: string) => void;
+  logout: () => void;
+}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export function AuthProvider({ children }: {children: ReactNode;}) {
+=======
 
 interface AuthContextType {
   user: User | null;
@@ -28,14 +53,18 @@ export function AuthProvider({
 }: {
   children: ReactNode;
 }) {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const [user, setUser] = useState<User | null>(() => {
     // Initialize from localStorage
     const savedUser = localStorage.getItem('court_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
+<<<<<<< HEAD
+=======
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   // Save to localStorage whenever user changes
   useEffect(() => {
     if (user) {
@@ -44,6 +73,82 @@ export function AuthProvider({
       localStorage.removeItem('court_user');
     }
   }, [user]);
+<<<<<<< HEAD
+  const login = (role: UserRole, username: string) => {
+    // Mock user data based on role
+    const userData: Record<UserRole, User> = {
+      judge: {
+        name: 'Hon. Justice Ibrahim',
+        role: 'judge',
+        staffId: 'JDG/2024/001',
+        department: 'High Court 1'
+      },
+      registrar: {
+        name: 'Registrar Bello',
+        role: 'registrar',
+        staffId: 'REG/2024/015',
+        department: 'Court Registry'
+      },
+      clerk: {
+        name: 'Clerk Amina',
+        role: 'clerk',
+        staffId: 'CLK/2024/042',
+        department: 'Filing Department'
+      },
+      admin: {
+        name: 'SysAdmin Yusuf',
+        role: 'admin',
+        staffId: 'ADM/2024/003',
+        department: 'IT Systems'
+      },
+      it_admin: {
+        name: 'IT Director Sani',
+        role: 'it_admin',
+        staffId: 'IT/2024/001',
+        department: 'Technology Infrastructure'
+      },
+      court_admin: {
+        name: 'Admin Director Okon',
+        role: 'court_admin',
+        staffId: 'ADM/2024/010',
+        department: 'Court Administration'
+      },
+      lawyer: {
+        name: 'Barrister Musa',
+        role: 'lawyer',
+        staffId: 'LAW/2024/128',
+        department: 'Legal Practice'
+      },
+      auditor: {
+        name: 'Auditor Sarah',
+        role: 'auditor',
+        staffId: 'AUD/2024/007',
+        department: 'Audit & Compliance'
+      },
+      partner: {
+        name: 'Police Liaison Officer',
+        role: 'partner',
+        staffId: 'EXT/2024/099',
+        department: 'Nigerian Police Force'
+      }
+    };
+    setUser(userData[role]);
+  };
+  const logout = () => {
+    setUser(null);
+  };
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout
+      }}>
+
+      {children}
+    </AuthContext.Provider>);
+
+=======
 
   const login = async (username: string, password: string, role: UserRole) => {
     setIsLoading(true);
@@ -97,6 +202,7 @@ export function AuthProvider({
   }}>
       {children}
     </AuthContext.Provider>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }
 export function useAuth() {
   const context = useContext(AuthContext);

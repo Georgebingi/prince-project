@@ -9,6 +9,11 @@ interface CreateCaseModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+<<<<<<< HEAD
+export function CreateCaseModal({ isOpen, onClose }: CreateCaseModalProps) {
+  const { addCase } = useCases();
+  const { user } = useAuth();
+=======
 export function CreateCaseModal({
   isOpen,
   onClose
@@ -19,6 +24,7 @@ export function CreateCaseModal({
   const {
     user
   } = useAuth();
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -31,6 +37,22 @@ export function CreateCaseModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Only show registrar selection for lawyers
   const isLawyer = user?.role === 'lawyer';
+<<<<<<< HEAD
+  const registrars = [
+  {
+    value: 'Registrar Bello',
+    label: 'Registrar Bello (High Court 1)'
+  },
+  {
+    value: 'Registrar Chioma',
+    label: 'Registrar Chioma (High Court 2)'
+  },
+  {
+    value: 'Registrar Okon',
+    label: 'Registrar Okon (High Court 3)'
+  }];
+
+=======
   const registrars = [{
     value: 'Registrar Bello',
     label: 'Registrar Bello (High Court 1)'
@@ -41,11 +63,16 @@ export function CreateCaseModal({
     value: 'Registrar Okon',
     label: 'Registrar Okon (High Court 3)'
   }];
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   if (!isOpen) return null;
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+<<<<<<< HEAD
+    Array.from(files).forEach((file) => {
+=======
     Array.from(files).forEach(file => {
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       const newDoc: CaseDocument = {
         id: `doc-${Date.now()}-${Math.random()}`,
         name: file.name,
@@ -54,11 +81,19 @@ export function CreateCaseModal({
         uploadedAt: new Date().toISOString().split('T')[0],
         uploadedBy: 'You'
       };
+<<<<<<< HEAD
+      setDocuments((prev) => [...prev, newDoc]);
+    });
+  };
+  const handleRemoveDocument = (docId: string) => {
+    setDocuments(documents.filter((d) => d.id !== docId));
+=======
       setDocuments(prev => [...prev, newDoc]);
     });
   };
   const handleRemoveDocument = (docId: string) => {
     setDocuments(documents.filter(d => d.id !== docId));
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,20 +137,148 @@ export function CreateCaseModal({
       });
       setDocuments([]);
       onClose();
+<<<<<<< HEAD
+      alert(
+        isLawyer ?
+        'Case submitted to registrar for approval!' :
+        'Case created successfully!'
+      );
+    }, 1000);
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+=======
       alert(isLawyer ? 'Case submitted to registrar for approval!' : 'Case created successfully!');
     }, 1000);
   };
   return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <h2 className="text-xl font-semibold text-slate-900">
             Create New Case
           </h2>
+<<<<<<< HEAD
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+
+=======
           <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <X className="h-5 w-5 text-slate-500" />
           </button>
         </div>
 
+<<<<<<< HEAD
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+
+          <div className="space-y-4">
+            <Input
+              label="Case Title *"
+              placeholder="e.g., State vs. John Doe"
+              value={formData.title}
+              onChange={(e) =>
+              setFormData({
+                ...formData,
+                title: e.target.value
+              })
+              }
+              required />
+
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Select
+                label="Case Type *"
+                value={formData.type}
+                onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  type: e.target.value as any
+                })
+                }
+                options={[
+                {
+                  value: 'Criminal',
+                  label: 'Criminal'
+                },
+                {
+                  value: 'Civil',
+                  label: 'Civil'
+                },
+                {
+                  value: 'Family',
+                  label: 'Family'
+                },
+                {
+                  value: 'Commercial',
+                  label: 'Commercial'
+                },
+                {
+                  value: 'Appeal',
+                  label: 'Appeal'
+                }]
+                }
+                required />
+
+
+              <Select
+                label="Priority *"
+                value={formData.priority}
+                onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  priority: e.target.value as any
+                })
+                }
+                options={[
+                {
+                  value: 'High',
+                  label: 'High Priority'
+                },
+                {
+                  value: 'Medium',
+                  label: 'Medium Priority'
+                },
+                {
+                  value: 'Low',
+                  label: 'Low Priority'
+                }]
+                }
+                required />
+
+            </div>
+
+            {isLawyer &&
+            <Select
+              label="Assign Registrar *"
+              value={formData.registrar}
+              onChange={(e) =>
+              setFormData({
+                ...formData,
+                registrar: e.target.value
+              })
+              }
+              options={registrars}
+              placeholder="Select a registrar..."
+              required />
+
+            }
+
+            <Input
+              label="Requested Hearing Date (Optional)"
+              type="date"
+              value={formData.nextHearing}
+              onChange={(e) =>
+              setFormData({
+                ...formData,
+                nextHearing: e.target.value
+              })
+              } />
+
+=======
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="space-y-4">
             <Input label="Case Title *" placeholder="e.g., State vs. John Doe" value={formData.title} onChange={e => setFormData({
@@ -168,6 +331,7 @@ export function CreateCaseModal({
             ...formData,
             nextHearing: e.target.value
           })} />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           </div>
 
           <div className="border-t border-slate-200 pt-6">
@@ -175,8 +339,23 @@ export function CreateCaseModal({
               Case Documents
             </h3>
 
+<<<<<<< HEAD
+            <div
+              className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-primary hover:bg-slate-50 transition-colors cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.jpg,.png"
+                className="hidden"
+                onChange={handleFileUpload} />
+
+=======
             <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-primary hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
               <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.jpg,.png" className="hidden" onChange={handleFileUpload} />
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
               <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
               <p className="text-sm text-slate-600">
                 Click to upload documents
@@ -186,8 +365,18 @@ export function CreateCaseModal({
               </p>
             </div>
 
+<<<<<<< HEAD
+            {documents.length > 0 &&
+            <div className="mt-4 space-y-2">
+                {documents.map((doc) =>
+              <div
+                key={doc.id}
+                className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+
+=======
             {documents.length > 0 && <div className="mt-4 space-y-2">
                 {documents.map(doc => <div key={doc.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     <div className="flex items-center gap-3">
                       <FileText className="h-5 w-5 text-blue-600" />
                       <div>
@@ -197,11 +386,25 @@ export function CreateCaseModal({
                         <p className="text-xs text-slate-500">{doc.size}</p>
                       </div>
                     </div>
+<<<<<<< HEAD
+                    <button
+                  type="button"
+                  onClick={() => handleRemoveDocument(doc.id)}
+                  className="p-1 hover:bg-slate-200 rounded transition-colors">
+
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </button>
+                  </div>
+              )}
+              </div>
+            }
+=======
                     <button type="button" onClick={() => handleRemoveDocument(doc.id)} className="p-1 hover:bg-slate-200 rounded transition-colors">
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </button>
                   </div>)}
               </div>}
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           </div>
         </form>
 
@@ -214,5 +417,10 @@ export function CreateCaseModal({
           </Button>
         </div>
       </div>
+<<<<<<< HEAD
+    </div>);
+
+=======
     </div>;
+>>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }
