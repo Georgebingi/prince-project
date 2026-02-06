@@ -1,0 +1,173 @@
+/* Welcome page: single viewport, no scroll, scales to fit */
+
+/* Animation delays (no inline styles) */
+[data-animation-delay="0"] { animation-delay: 0ms; }
+[data-animation-delay="150"] { animation-delay: 150ms; }
+[data-animation-delay="300"] { animation-delay: 300ms; }
+
+/* Page: lock to viewport, no scroll */
+.welcome-page {
+  height: 100dvh;
+  height: 100vh;
+  overflow: hidden;
+  padding: 0.5rem 1rem;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Card: fixed height so body has space; content fits inside */
+.welcome-page__card {
+  width: 100%;
+  max-width: min(52rem, 90vw);
+  height: 92dvh;
+  height: 92vh;
+  max-height: 92dvh;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 1.25rem;
+  box-sizing: border-box;
+}
+
+/* Card body: fills card, shows all three sections (logos, content, CTA) */
+.welcome-page__card-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: min(1rem, 2dvh) 0;
+  gap: min(0.75rem, 1.5dvh);
+  overflow: hidden;
+}
+
+/* Logos: compact, scale with viewport */
+.welcome-page__logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: min(1.25rem, 3dvh);
+  flex-shrink: 0;
+}
+
+.welcome-page__logo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: min(0.35rem, 0.8dvh);
+}
+
+.welcome-page__logo-box {
+  width: min(7rem, 14dvh);
+  height: min(7rem, 14dvh);
+  flex-shrink: 0;
+}
+
+.welcome-page__logo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.welcome-page__logo-label {
+  font-size: min(0.7rem, 1.95dvh);
+  max-width: 8rem;
+  line-height: 1.15;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Main content block – must not collapse; keep title + subtitle + CTA visible */
+.welcome-page__content {
+  flex: 0 0 auto;
+  min-height: min-content;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: min(0.5rem, 1dvh);
+  max-width: 44rem;
+}
+
+.welcome-page__title {
+  font-size: min(1.5rem, 4dvh);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.welcome-page__subtitle {
+  font-size: min(0.9rem, 2.35dvh);
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.welcome-page__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.welcome-page__divider-line {
+  width: min(4.5rem, 10vw);
+  height: 1px;
+}
+
+.welcome-page__divider-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+}
+
+/* CTA */
+.welcome-page__cta-wrap {
+  flex-shrink: 0;
+}
+
+.welcome-page__cta-button {
+  font-size: min(1.1rem, 2.55dvh);
+  padding: min(0.9rem, 2.2dvh) min(2.1rem, 6vw);
+  border-radius: 9999px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.welcome-page__cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.5);
+}
+
+.welcome-page__cta-hint {
+  font-size: min(0.65rem, 1.65dvh);
+  margin-top: min(0.35rem, 0.8dvh);
+  font-weight: 600;
+}
+
+/* Footer */
+.welcome-page__footer {
+  padding: min(0.5rem, 1.2dvh) 0.75rem;
+  font-size: min(0.6rem, 1.5dvh);
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+/* Entrance animation */
+.welcome-page__card-inner {
+  animation: welcome-in 0.5s ease-out both;
+}
+
+@keyframes welcome-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}

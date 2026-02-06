@@ -87,7 +87,7 @@ export function AdminDashboard() {
     setShowNotificationModal(false);
     alert('Notification sent to all users!');
   };
-  return <Layout title="System Administration">
+  return <Layout title="System Administration" showLogoBanner={false}>
       <div className="space-y-6 print:hidden">
         {/* Maintenance Mode Alert */}
         {isMaintenanceActive() && <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">

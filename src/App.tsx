@@ -9,6 +9,7 @@ import { ChatWidget } from './components/ChatWidget';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
+import { WelcomePage } from './pages/WelcomePage';
 // Dashboards
 import { JudgeDashboard } from './pages/dashboards/JudgeDashboard';
 import { RegistrarDashboard } from './pages/dashboards/RegistrarDashboard';
@@ -67,11 +68,12 @@ function AppContent() {
   } = useAuth();
   const location = useLocation();
   // Only show chat widget if user is logged in and not on login/signup pages
-  const showChat = user && !['/', '/signup'].includes(location.pathname);
+  const showChat = user && !['/', '/login', '/signup'].includes(location.pathname);
   return <>
       <LoadingOverlay isLoading={authLoading} text="Authenticating..." />
       <Routes>
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
 
         {/* Protected Routes */}

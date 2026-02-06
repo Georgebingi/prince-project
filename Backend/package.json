@@ -19,7 +19,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
@@ -27,9 +27,12 @@
     "express-validator": "^7.3.1",
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^1.4.5-lts.1",
+    "multer": "2.0.2",
     "mysql2": "^3.16.0",
     "pg": "^8.16.3"
+  },
+  "overrides": {
+    "tar": "^7.5.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

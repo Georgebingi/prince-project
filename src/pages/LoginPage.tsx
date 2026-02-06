@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, UserRole } from '../contexts/AuthContext';
-import { LogoBanner } from '../components/layout/LogoBanner';
 import { User, Lock, ChevronRight, ShieldCheck, ArrowLeft, Mail, AlertCircle } from 'lucide-react';
 import { LoadingButton } from '../components/ui/LoadingButton';
 import { Card } from '../components/ui/Card';
@@ -72,10 +71,10 @@ export function LoginPage() {
     value: 'auditor',
     label: 'Auditor'
   }];
-  return <div className="min-h-screen bg-slate-50 flex flex-col">
-      <LogoBanner />
+  return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Green accent top bar */}
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-600 via-white to-green-600" aria-hidden />
 
-      <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-slate-900">
@@ -201,6 +200,5 @@ export function LoginPage() {
             © 2024 Kaduna State Judiciary. All rights reserved.
           </p>
         </div>
-      </div>
     </div>;
 }

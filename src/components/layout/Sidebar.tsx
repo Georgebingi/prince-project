@@ -1,6 +1,5 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FolderOpen, FileText, UserPlus, BarChart3, LogOut, Gavel, X, ShieldAlert, Globe, Users } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, FileText, UserPlus, BarChart3, LogOut, Gavel, X, ShieldAlert, Globe } from 'lucide-react';
 import { useAuth, UserRole } from '../../contexts/AuthContext';
 interface SidebarProps {
   isOpen: boolean;
@@ -56,7 +55,7 @@ export function Sidebar({
     if (!user) return false;
     if (item.roles.includes('all')) return true;
     // Map 'admin' to 'it_admin' capabilities if needed, or keep distinct
-    const userRole = user.role;
+    const userRole: UserRole = user.role;
     return item.roles.includes(userRole);
   });
   const handleLogout = () => {
@@ -70,7 +69,7 @@ export function Sidebar({
       {/* Sidebar */}
       <aside className={`
           fixed left-0 top-0 z-50 h-screen w-72 bg-primary text-white transition-transform duration-300 ease-in-out
-          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-blue-800 px-4">
@@ -80,7 +79,7 @@ export function Sidebar({
               KADUNA HIGH COURT
             </span>
           </div>
-          <button onClick={onClose} className="lg:hidden p-2 hover:bg-blue-800 rounded-md transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-blue-800 rounded-md transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -88,15 +87,21 @@ export function Sidebar({
         {/* Navigation */}
         <div className="flex flex-col justify-between h-[calc(100vh-4rem)]">
           <nav className="space-y-1 px-3 py-4 overflow-y-auto">
-            {navItems.map(item => <NavLink key={item.to} to={item.to} onClick={() => onClose()} className={({
-            isActive
-          }) => `
-                  flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors
-                  ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-100 hover:bg-blue-800/50 hover:text-white'}
-                `}>
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </NavLink>)}
+          {navItems.map(item => <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => onClose()}
+              className={({ isActive }) => `
+                  flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium
+                  transition-all duration-300 ease-out
+                  ${isActive
+                ? 'bg-blue-800 text-white shadow-sm'
+                : 'text-blue-100 hover:bg-blue-800/60 hover:text-white hover:translate-x-1'}
+                `}
+            >
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </NavLink>)}
           </nav>
 
           {/* User Info & Logout */}

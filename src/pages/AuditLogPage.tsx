@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Badge } from '../components/ui/Badge';
-import { Download, Filter, Search, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Download, Filter, RefreshCw, Search, ShieldAlert } from 'lucide-react';
 interface AuditLog {
   id: string;
   user: string;
@@ -18,7 +18,7 @@ interface AuditLog {
 export function AuditLogPage() {
   const [filterUser, setFilterUser] = useState('');
   const [filterAction, setFilterAction] = useState('');
-  const [logs, setLogs] = useState<AuditLog[]>([{
+  const logs: AuditLog[] = [{
     id: 'LOG-001',
     user: 'Hon. Justice Ibrahim',
     action: 'Viewed Case Details',
@@ -58,7 +58,7 @@ export function AuditLogPage() {
     timestamp: '2024-01-19 16:20:33',
     status: 'Success',
     ip: '10.0.0.5'
-  }]);
+  }];
   const filteredLogs = logs.filter(log => {
     const matchesUser = filterUser === '' || log.user.toLowerCase().includes(filterUser.toLowerCase());
     const matchesAction = filterAction === '' || log.action.toLowerCase().includes(filterAction.toLowerCase());
@@ -72,17 +72,29 @@ export function AuditLogPage() {
     // Here, the filtering is already reactive, but we can show a feedback
     alert(`Filters applied! Showing ${filteredLogs.length} results.`);
   };
-  return <Layout title="Audit Logs & Compliance">
+  return <Layout title="Audit Logs & Compliance" showLogoBanner={true}>
       <div className="space-y-6">
         {/* Filters Card - Hide in print */}
         <div className="print:hidden">
           <Card>
             <div className="flex flex-col md:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
-                <Input label="Search User" placeholder="e.g. Ibrahim" value={filterUser} onChange={e => setFilterUser(e.target.value)} />
+                <Input
+                  label="Search User"
+                  placeholder="e.g. Ibrahim"
+                  value={filterUser}
+                  onChange={e => setFilterUser(e.target.value)}
+                  icon={<Search className="h-4 w-4" />}
+                />
               </div>
               <div className="flex-1 w-full">
-                <Input label="Search Action" placeholder="e.g. Login, Upload" value={filterAction} onChange={e => setFilterAction(e.target.value)} />
+                <Input
+                  label="Search Action"
+                  placeholder="e.g. Login, Upload"
+                  value={filterAction}
+                  onChange={e => setFilterAction(e.target.value)}
+                  icon={<Search className="h-4 w-4" />}
+                />
               </div>
               <div className="flex-1 w-full">
                 <Select label="Status" options={[{
