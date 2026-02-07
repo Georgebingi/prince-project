@@ -72,7 +72,7 @@ export const authorizeRole = (...allowedRoles) => {
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      console.log(`🚫 Access denied: User ${req.user.email} (role: ${req.user.role}) attempted to access resource requiring roles: ${allowedRoles.join(', ')}`);
+      // Expected when a role tries to access an admin/registrar-only resource; no need to log as error
       return res.status(403).json({
         success: false,
         error: {

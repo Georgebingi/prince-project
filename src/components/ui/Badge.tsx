@@ -1,15 +1,5 @@
 import React from 'react';
-<<<<<<< HEAD
-export type BadgeVariant =
-'default' |
-'secondary' |
-'success' |
-'warning' |
-'danger' |
-'outline';
-=======
 export type BadgeVariant = 'default' | 'secondary' | 'success' | 'warning' | 'danger' | 'outline';
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
 }
@@ -27,18 +17,7 @@ export function Badge({
     danger: 'bg-red-100 text-red-700 border-red-200',
     outline: 'text-slate-700 border border-slate-200'
   };
-<<<<<<< HEAD
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${variants[variant]} ${className}`}
-      {...props}>
-
-      {children}
-    </span>);
-
-=======
   return <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${variants[variant]} ${className}`} {...props}>
       {children}
     </span>;
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

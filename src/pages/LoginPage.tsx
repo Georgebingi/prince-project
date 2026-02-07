@@ -1,26 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, UserRole } from '../contexts/AuthContext';
-<<<<<<< HEAD
+import { authApi, ApiError } from '../services/api';
 import { User, Lock, ChevronRight, ShieldCheck, ArrowLeft, Mail, AlertCircle } from 'lucide-react';
-import { LoadingButton } from '../components/ui/LoadingButton';
-=======
-import {
-  User,
-  Lock,
-  ChevronRight,
-  ShieldCheck,
-  ArrowLeft,
-  Mail,
-  AlertCircle } from
-'lucide-react';
 import { Button } from '../components/ui/Button';
->>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
 import { Card } from '../components/ui/Card';
 import { Select } from '../components/ui/Select';
 import { Input } from '../components/ui/Input';
+
 export function LoginPage() {
-  const { login } = useAuth();
+  const { loginFromApi } = useAuth();
   const navigate = useNavigate();
   const [role, setRole] = useState<UserRole>('judge');
   const [username, setUsername] = useState('');
@@ -30,20 +19,29 @@ export function LoginPage() {
   const [view, setView] = useState<'login' | 'forgot-password'>('login');
   const [resetEmail, setResetEmail] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!username?.trim() || !password) {
+      setError('Please enter both username/email and password');
+      return;
+    }
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      if (username && password) {
-        login(role, username);
+    try {
+      const response = await authApi.login(username.trim(), password, role);
+      if (response.success && response.user) {
+        loginFromApi(response.user);
         navigate('/dashboard');
-      } else {
-        setError('Please enter both username and password');
-        setIsLoading(false);
+        return;
       }
-    }, 800);
+      setError(response.error?.message ?? 'Login failed');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Login failed. Check that the backend is running on port 3000.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,17 +80,9 @@ export function LoginPage() {
     value: 'auditor',
     label: 'Auditor'
   }];
-<<<<<<< HEAD
   return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
         {/* Green accent top bar */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-600 via-white to-green-600" aria-hidden />
-=======
-
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Green accent top bar */}
-      <div className="h-2 bg-gradient-to-r from-green-600 via-white to-green-600"></div>
->>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
 
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
@@ -170,18 +160,18 @@ export function LoginPage() {
                 </div>
 
                 <Button
-                type="submit"
-                className="w-full justify-center py-2.5 text-base"
-                disabled={isLoading}>
-
-                  {isLoading ?
-                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> :
-
-                <>
-                      Sign In <ChevronRight className="ml-2 h-4 w-4" />
-                    </>
-                }
+                  type="submit"
+                  className="w-full justify-center py-2.5 text-base"
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                >
+                  {isLoading ? 'Signing in...' : <><span>Sign In</span> <ChevronRight className="ml-2 h-4 w-4" /></>}
                 </Button>
+                {isLoading && (
+                  <p className="text-center text-sm text-slate-500" role="status" aria-live="polite">
+                    Authenticating...
+                  </p>
+                )}
 
                 <div className="mt-6 text-center">
                   <p className="text-sm text-slate-600">
@@ -218,15 +208,12 @@ export function LoginPage() {
                 }
 
                     <Button
-                  type="submit"
-                  className="w-full justify-center py-2.5 text-base"
-                  disabled={isLoading}>
-
-                      {isLoading ?
-                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> :
-
-                  'Send Reset Link'
-                  }
+                      type="submit"
+                      className="w-full justify-center py-2.5 text-base"
+                      disabled={isLoading}
+                      isLoading={isLoading}
+                    >
+                      Send Reset Link
                     </Button>
                   </form> :
 
@@ -235,7 +222,7 @@ export function LoginPage() {
                       <ShieldCheck className="h-6 w-6 text-green-600" />
                     </div>
                     <h3 className="text-lg font-medium text-slate-900">
-                      Check your email
+                      Check your emails
                     </h3>
                     <p className="mt-2 text-sm text-slate-600">
                       We've sent password reset instructions to{' '}
@@ -267,11 +254,5 @@ export function LoginPage() {
             © 2024 Kaduna State Judiciary. All rights reserved.
           </p>
         </div>
-<<<<<<< HEAD
     </div>;
-=======
-      </div>
-    </div>);
-
->>>>>>> 7c3b96b4dbd39a8d6f1d7eb0413ba4492ca45fb0
 }

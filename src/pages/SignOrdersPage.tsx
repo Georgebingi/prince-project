@@ -8,20 +8,10 @@ import { ArrowLeft, PenTool, FileText, Check, X } from 'lucide-react';
 import { useCases, Order } from '../contexts/CasesContext';
 export function SignOrdersPage() {
   const navigate = useNavigate();
-<<<<<<< HEAD
   const { orders, signOrder } = useCases();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   // Filter only pending (draft) orders
   const pendingOrders = orders.filter((o) => o.status === 'Draft');
-=======
-  const {
-    orders,
-    signOrder
-  } = useCases();
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  // Filter only pending (draft) orders
-  const pendingOrders = orders.filter(o => o.status === 'Draft');
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const handleSign = (id: number) => {
     if (confirm('Apply digital signature to this order?')) {
       signOrder(id);
@@ -29,9 +19,8 @@ export function SignOrdersPage() {
       alert('Order signed and dispatched successfully!');
     }
   };
-<<<<<<< HEAD
   return (
-    <Layout title="Sign Orders">
+    <Layout title="Sign Orders" showLogoBanner={false}>
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button
@@ -39,12 +28,6 @@ export function SignOrdersPage() {
             size="sm"
             onClick={() => navigate('/dashboard')}>
 
-=======
-  return <Layout title="Sign Orders">
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
@@ -61,16 +44,12 @@ export function SignOrdersPage() {
           </div>
 
           <div className="divide-y divide-slate-100">
-<<<<<<< HEAD
             {pendingOrders.length > 0 ?
             pendingOrders.map((order) =>
             <div
               key={order.id}
               className="p-6 hover:bg-slate-50 transition-colors">
 
-=======
-            {pendingOrders.length > 0 ? pendingOrders.map(order => <div key={order.id} className="p-6 hover:bg-slate-50 transition-colors">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -91,15 +70,11 @@ export function SignOrdersPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-<<<<<<< HEAD
                       <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedOrder(order)}>
 
-=======
-                      <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <FileText className="h-4 w-4 mr-2" />
                         Review Draft
                       </Button>
@@ -109,50 +84,34 @@ export function SignOrdersPage() {
                       </Button>
                     </div>
                   </div>
-<<<<<<< HEAD
                 </div>
             ) :
 
             <div className="p-12 text-center text-slate-500">
-=======
-                </div>) : <div className="p-12 text-center text-slate-500">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <Check className="h-12 w-12 mx-auto mb-4 text-green-500 opacity-50" />
                 <h3 className="text-lg font-medium text-slate-900">
                   No Pending Orders
                 </h3>
                 <p>You have signed all pending orders.</p>
-<<<<<<< HEAD
               </div>
             }
-=======
-              </div>}
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           </div>
         </Card>
       </div>
 
       {/* Review Draft Modal */}
-<<<<<<< HEAD
       {selectedOrder &&
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-=======
-      {selectedOrder && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <FileText className="h-5 w-5 text-slate-400" />
                 Review Draft: {selectedOrder.title}
               </h3>
-<<<<<<< HEAD
               <button
               onClick={() => setSelectedOrder(null)}
               className="p-1 hover:bg-slate-100 rounded-full">
 
-=======
-              <button onClick={() => setSelectedOrder(null)} className="p-1 hover:bg-slate-100 rounded-full" aria-label="Close order viewer">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
@@ -174,12 +133,8 @@ export function SignOrdersPage() {
 
                 <div className="prose prose-slate max-w-none">
                   <p className="whitespace-pre-wrap leading-relaxed">
-<<<<<<< HEAD
                     {selectedOrder.content ||
                   'Content not available for this draft.'}
-=======
-                    {selectedOrder.content || 'Content not available for this draft.'}
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   </p>
                 </div>
 
@@ -207,13 +162,8 @@ export function SignOrdersPage() {
               </Button>
             </div>
           </div>
-<<<<<<< HEAD
         </div>
       }
     </Layout>);
 
-=======
-        </div>}
-    </Layout>;
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

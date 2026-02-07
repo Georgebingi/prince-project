@@ -10,13 +10,7 @@ import { CourtAdminDashboard } from './dashboards/CourtAdminDashboard';
 import { ITAdminDashboard } from './dashboards/ITAdminDashboard';
 import { AuditorDashboard } from './dashboards/AuditorDashboard';
 export function DashboardPage() {
-<<<<<<< HEAD
   const { user } = useAuth();
-=======
-  const {
-    user
-  } = useAuth();
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   if (!user) {
     return null;
   }
@@ -42,12 +36,8 @@ export function DashboardPage() {
       return <PartnerDashboard />;
     default:
       // Fallback for unknown roles or if role is missing
-<<<<<<< HEAD
       return (
         <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-=======
-      return <div className="flex flex-col items-center justify-center h-[60vh] text-center">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           <h2 className="text-2xl font-bold text-slate-900 mb-2">
             Welcome to CourtManager
           </h2>
@@ -59,11 +49,7 @@ export function DashboardPage() {
               Current Role: {user.role || 'None'}
             </p>
           </div>
-<<<<<<< HEAD
         </div>);
 
-=======
-        </div>;
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   }
 }

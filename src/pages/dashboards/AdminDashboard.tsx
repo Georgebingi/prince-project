@@ -11,18 +11,9 @@ import { useCases } from '../../contexts/CasesContext';
 import { useSystem } from '../../contexts/SystemContext';
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const {
-    staff
-  } = useStaff();
-  const {
-    cases
-  } = useCases();
-  const {
-    settings,
-    toggleMaintenanceMode,
-    addSystemNotification,
-    isMaintenanceActive
-  } = useSystem();
+  const { staff } = useStaff();
+  const { cases } = useCases();
+  const { settings, toggleMaintenanceMode, addSystemNotification, isMaintenanceActive } = useSystem();
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
@@ -89,7 +80,7 @@ export function AdminDashboard() {
   };
 
   return (
-    <Layout title="System Administration">
+    <Layout title="System Administration" showLogoBanner={false}>
       <div className="space-y-6 print:hidden">
         {/* Maintenance Mode Alert */}
         {isMaintenanceActive() && (
@@ -122,7 +113,7 @@ export function AdminDashboard() {
                 </h3>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <Activity className="h-3 w-3 mr-1" />
-                  {staff.filter(s => s.status === 'Active').length} Active
+                  {staff.filter(s => s.status === 'active').length} Active
                 </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">

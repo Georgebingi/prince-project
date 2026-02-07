@@ -90,18 +90,19 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/cases/:id - Get case by ID
+// GET /api/cases/:id - Get case by ID (numeric) or case_number (e.g. KDH/2024/001)
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const byNumericId = /^\d+$/.test(id);
 
-    // Get case details
+    // Get case details (by id or case_number for frontend-friendly URLs)
     const [cases] = await db.query(
       `SELECT c.*, u.name as judge_name, u.email as judge_email 
        FROM cases c 
        LEFT JOIN users u ON c.judge_id = u.id 
-       WHERE c.id = ?`,
-      [id]
+       WHERE ${byNumericId ? 'c.id = ?' : 'c.case_number = ?'}`,
+      [byNumericId ? parseInt(id, 10) : id]
     );
 
     if (cases.length === 0) {
@@ -115,6 +116,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const caseData = cases[0];
+    const caseIdNumeric = caseData.id;
 
     // Get parties
     let parties = [];
@@ -124,7 +126,7 @@ router.get('/:id', async (req, res) => {
          FROM case_parties cp 
          LEFT JOIN users u ON cp.lawyer_id = u.id 
          WHERE cp.case_id = ?`,
-        [id]
+        [caseIdNumeric]
       );
       parties = partiesResult;
     } catch (error) {
@@ -140,7 +142,7 @@ router.get('/:id', async (req, res) => {
          LEFT JOIN users u ON d.uploaded_by = u.id 
          WHERE d.case_id = ? 
          ORDER BY d.uploaded_at DESC`,
-        [id]
+        [caseIdNumeric]
       );
       documents = documentsResult;
     } catch (error) {
@@ -156,7 +158,7 @@ router.get('/:id', async (req, res) => {
          LEFT JOIN users u ON ct.created_by = u.id 
          WHERE ct.case_id = ? 
          ORDER BY ct.date DESC`,
-        [id]
+        [caseIdNumeric]
       );
       timeline = timelineResult;
     } catch (error) {

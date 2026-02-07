@@ -1,5 +1,6 @@
-import React, { useEffect, useState, createContext, useContext } from 'react';
+import React, { useEffect, useState, createContext, useContext, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { casesApi, ApiError } from '../services/api';
 export interface CaseDocument {
   id: string;
   name: string;
@@ -59,7 +60,10 @@ interface CasesContextType {
   cases: Case[];
   motions: Motion[];
   orders: Order[];
-  addCase: (newCase: Omit<Case, 'id' | 'filed' | 'updated'>) => void;
+  isLoading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  addCase: (newCase: Omit<Case, 'id' | 'filed' | 'updated'>) => Promise<void>;
   updateCase: (id: string, updates: Partial<Case>) => void;
   deleteCase: (id: string) => void;
   getCaseById: (id: string) => Case | undefined;
@@ -75,12 +79,7 @@ interface CasesContextType {
   assignCaseToLawyer: (caseId: string, lawyer: string) => void;
 }
 const CasesContext = createContext<CasesContextType | undefined>(undefined);
-<<<<<<< HEAD
-const INITIAL_CASES: Case[] = [
-{
-=======
 const INITIAL_CASES: Case[] = [{
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 'KDH/2024/001',
   title: 'State vs. Abdullahi Musa',
   type: 'Criminal',
@@ -94,12 +93,7 @@ const INITIAL_CASES: Case[] = [{
   court: 'High Court 1',
   filed: '2023-12-10',
   updated: '2 days ago',
-<<<<<<< HEAD
-  documents: [
-  {
-=======
   documents: [{
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     id: 'doc1',
     name: 'Charge_Sheet.pdf',
     type: 'PDF',
@@ -107,15 +101,8 @@ const INITIAL_CASES: Case[] = [{
     uploadedAt: '2023-12-10',
     uploadedBy: 'Registrar'
   }],
-<<<<<<< HEAD
-
-  notes: []
-},
-{
-=======
   notes: []
 }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 'KDH/2024/015',
   title: 'Land Dispute: Zaria GRA',
   type: 'Civil',
@@ -131,12 +118,7 @@ const INITIAL_CASES: Case[] = [{
   updated: '5 hours ago',
   documents: [],
   notes: []
-<<<<<<< HEAD
-},
-{
-=======
 }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 'KDH/2024/022',
   title: 'Contract Breach: ABC Ltd',
   type: 'Commercial',
@@ -152,12 +134,7 @@ const INITIAL_CASES: Case[] = [{
   updated: '1 week ago',
   documents: [],
   notes: []
-<<<<<<< HEAD
-},
-{
-=======
 }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 'KDH/2024/038',
   title: 'Family Estate Settlement',
   type: 'Family',
@@ -173,12 +150,7 @@ const INITIAL_CASES: Case[] = [{
   updated: 'Yesterday',
   documents: [],
   notes: []
-<<<<<<< HEAD
-},
-{
-=======
 }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 'KDH/2024/042',
   title: 'Tenancy Appeal No. 4',
   type: 'Appeal',
@@ -194,12 +166,7 @@ const INITIAL_CASES: Case[] = [{
   updated: '3 days ago',
   documents: [],
   notes: []
-<<<<<<< HEAD
-},
-{
-=======
 }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 'KDH/2024/051',
   title: 'Divorce Petition',
   type: 'Family',
@@ -232,13 +199,7 @@ const INITIAL_CASES: Case[] = [{
   documents: [],
   notes: []
 }];
-<<<<<<< HEAD
-
-const INITIAL_MOTIONS: Motion[] = [
-{
-=======
 const INITIAL_MOTIONS: Motion[] = [{
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 1,
   caseId: 'KDH/2024/001',
   title: 'Motion for Bail',
@@ -246,12 +207,7 @@ const INITIAL_MOTIONS: Motion[] = [{
   date: '2024-01-15',
   status: 'Pending',
   documentUrl: 'bail_motion.pdf'
-<<<<<<< HEAD
-},
-{
-=======
 }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 2,
   caseId: 'KDH/2024/022',
   title: 'Motion for Adjournment',
@@ -259,12 +215,7 @@ const INITIAL_MOTIONS: Motion[] = [{
   date: '2024-01-16',
   status: 'Pending',
   documentUrl: 'adjournment_request.pdf'
-<<<<<<< HEAD
-},
-{
-=======
 }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 3,
   caseId: 'KDH/2024/015',
   title: 'Motion to Amend Charges',
@@ -273,43 +224,23 @@ const INITIAL_MOTIONS: Motion[] = [{
   status: 'Pending',
   documentUrl: 'amendment_motion.pdf'
 }];
-<<<<<<< HEAD
-
-const INITIAL_ORDERS: Order[] = [
-{
-=======
 const INITIAL_ORDERS: Order[] = [{
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 1,
   caseId: 'KDH/2024/001',
   title: 'Order of Remand',
   draftedBy: 'Registrar Chioma',
   date: '2024-01-15',
   status: 'Draft',
-<<<<<<< HEAD
-  content:
-  'The defendant is hereby remanded in custody pending the determination of the bail application...'
-},
-{
-=======
   content: 'The defendant is hereby remanded in custody pending the determination of the bail application...'
 }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   id: 2,
   caseId: 'KDH/2024/042',
   title: 'Hearing Notice',
   draftedBy: 'Clerk Amina',
   date: '2024-01-16',
   status: 'Draft',
-<<<<<<< HEAD
-  content:
-  'NOTICE IS HEREBY GIVEN that the above matter is listed for hearing on...'
-}];
-
-=======
   content: 'NOTICE IS HEREBY GIVEN that the above matter is listed for hearing on...'
 }];
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 // Helper function to calculate days left until hearing
 const calculateDaysLeft = (hearingDate: string): number => {
   if (hearingDate === 'TBD') return 30;
@@ -329,20 +260,71 @@ const getDefaultHearingDate = (): string => {
     year: 'numeric'
   });
 };
-<<<<<<< HEAD
-export function CasesProvider({ children }: {children: React.ReactNode;}) {
-  const { user } = useAuth();
-=======
+
+const TYPE_COLORS: Record<string, string> = {
+  Criminal: 'bg-red-600',
+  Civil: 'bg-blue-600',
+  Family: 'bg-emerald-600',
+  Commercial: 'bg-purple-600',
+  Appeal: 'bg-amber-600'
+};
+
+function formatDate(d: string | null | undefined): string {
+  if (!d) return 'TBD';
+  const date = new Date(d);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/** Map backend case row (list or detail) to frontend Case shape */
+function mapBackendCaseToFrontend(row: {
+  id?: number;
+  case_number?: string;
+  title?: string;
+  type?: string;
+  status?: string;
+  priority?: string;
+  next_hearing?: string | null;
+  filed_date?: string;
+  judge_name?: string | null;
+  court?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  documents?: Array<{ id: number; name: string; type: string; file_size?: number; uploaded_at?: string; uploaded_by_name?: string }>;
+}): Case {
+  const id = row.case_number ?? String(row.id ?? '');
+  const nextHearing = formatDate(row.next_hearing);
+  return {
+    id,
+    title: row.title ?? '',
+    type: (row.type as Case['type']) ?? 'Civil',
+    status: row.status ?? 'Pending',
+    priority: (row.priority as Case['priority']) ?? 'Medium',
+    nextHearing: nextHearing === 'TBD' ? 'TBD' : nextHearing,
+    daysLeft: calculateDaysLeft(nextHearing),
+    color: TYPE_COLORS[row.type ?? ''] ?? 'bg-slate-600',
+    pages: row.documents?.length ?? 0,
+    judge: row.judge_name ?? undefined,
+    court: row.court ?? undefined,
+    filed: formatDate(row.filed_date) ?? '',
+    updated: row.updated_at ? new Date(row.updated_at).toLocaleDateString() : '',
+    documents: (row.documents ?? []).map((d) => ({
+      id: String(d.id),
+      name: d.name,
+      type: d.type,
+      size: d.file_size ? `${(d.file_size / 1024).toFixed(1)} KB` : '0 KB',
+      uploadedAt: d.uploaded_at ? formatDate(d.uploaded_at) : '',
+      uploadedBy: d.uploaded_by_name ?? 'Unknown'
+    })),
+    notes: []
+  };
+}
+
 export function CasesProvider({
   children
 }: {
   children: React.ReactNode;
 }) {
-  const {
-    user
-  } = useAuth();
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-  // Initialize state from localStorage or defaults
+  const { user } = useAuth();
   const [cases, setCases] = useState<Case[]>(() => {
     const saved = localStorage.getItem('court_cases');
     return saved ? JSON.parse(saved) : INITIAL_CASES;
@@ -355,7 +337,39 @@ export function CasesProvider({
     const saved = localStorage.getItem('court_orders');
     return saved ? JSON.parse(saved) : INITIAL_ORDERS;
   });
-  // Persist to localStorage whenever state changes
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setCases([]);
+      setError(null);
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await casesApi.getCases({ limit: 100 });
+      if (res.success && Array.isArray(res.data)) {
+        const mapped = (res.data as unknown[]).map((row: unknown) =>
+          mapBackendCaseToFrontend(row as Parameters<typeof mapBackendCaseToFrontend>[0])
+        );
+        setCases(mapped);
+        localStorage.setItem('court_cases', JSON.stringify(mapped));
+      }
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to load cases';
+      setError(message);
+      // Keep existing cases from localStorage on error
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   useEffect(() => {
     localStorage.setItem('court_cases', JSON.stringify(cases));
   }, [cases]);
@@ -365,84 +379,32 @@ export function CasesProvider({
   useEffect(() => {
     localStorage.setItem('court_orders', JSON.stringify(orders));
   }, [orders]);
-  const addCase = (newCase: Omit<Case, 'id' | 'filed' | 'updated'>) => {
-    const caseNumber = `KDH/2024/${String(cases.length + 1).padStart(3, '0')}`;
-    const now = new Date().toISOString().split('T')[0];
-    // Automatically assign judge if created by a judge
-    const judgeAssignment = user?.role === 'judge' ? user.name : newCase.judge;
-<<<<<<< HEAD
-    const courtAssignment =
-    user?.role === 'judge' ? user.department : newCase.court;
-    // Set default hearing date if not provided or if TBD
+
+  const addCase = async (newCase: Omit<Case, 'id' | 'filed' | 'updated'>) => {
     const hearingDate =
-    newCase.nextHearing === 'TBD' || !newCase.nextHearing ?
-    getDefaultHearingDate() :
-    newCase.nextHearing;
-=======
-    const courtAssignment = user?.role === 'judge' ? user.department : newCase.court;
-    // Set default hearing date if not provided or if TBD
-    const hearingDate = newCase.nextHearing === 'TBD' || !newCase.nextHearing ? getDefaultHearingDate() : newCase.nextHearing;
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-    const caseToAdd: Case = {
-      ...newCase,
-      id: caseNumber,
-      filed: now,
-      updated: 'Just now',
-      documents: newCase.documents || [],
-      notes: [],
-      judge: judgeAssignment,
-      court: courtAssignment,
-      createdBy: user?.name || 'Unknown',
-      nextHearing: hearingDate,
-      daysLeft: calculateDaysLeft(hearingDate),
-      // If created by judge, it's automatically assigned; otherwise needs approval
-<<<<<<< HEAD
-      status:
-      user?.role === 'judge' ? 'Filed' : newCase.status || 'Pending Approval'
-=======
-      status: user?.role === 'judge' ? 'Filed' : newCase.status || 'Pending Approval'
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-    };
-    setCases([caseToAdd, ...cases]);
+      newCase.nextHearing === 'TBD' || !newCase.nextHearing
+        ? getDefaultHearingDate()
+        : newCase.nextHearing;
+    const nextHearingISO =
+      hearingDate === 'TBD' || !hearingDate
+        ? undefined
+        : new Date(hearingDate).toISOString().split('T')[0];
+    try {
+      await casesApi.createCase({
+        title: newCase.title,
+        type: newCase.type,
+        description: '',
+        priority: newCase.priority,
+        nextHearing: nextHearingISO,
+        parties: []
+      });
+      await refresh();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to create case';
+      throw new Error(message);
+    }
   };
   const updateCase = (id: string, updates: Partial<Case>) => {
-<<<<<<< HEAD
-    setCases(
-      cases.map((c) =>
-      c.id === id ?
-      {
-        ...c,
-        ...updates,
-        updated: 'Just now',
-        // Recalculate daysLeft if nextHearing is updated
-        daysLeft: updates.nextHearing ?
-        calculateDaysLeft(updates.nextHearing) :
-        c.daysLeft
-      } :
-      c
-      )
-    );
-  };
-  const deleteCase = (id: string) => {
-    setCases(cases.filter((c) => c.id !== id));
-  };
-  const getCaseById = (id: string) => {
-    return cases.find((c) => c.id === id);
-  };
-  const addDocumentToCase = (caseId: string, document: CaseDocument) => {
-    setCases(
-      cases.map((c) =>
-      c.id === caseId ?
-      {
-        ...c,
-        documents: [...c.documents, document],
-        pages: c.pages + 1,
-        updated: 'Just now'
-      } :
-      c
-      )
-    );
-=======
     setCases(cases.map(c => c.id === id ? {
       ...c,
       ...updates,
@@ -464,7 +426,6 @@ export function CasesProvider({
       pages: c.pages + 1,
       updated: 'Just now'
     } : c));
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   };
   const addNoteToCase = (caseId: string, text: string) => {
     const newNote: CaseNote = {
@@ -473,151 +434,6 @@ export function CasesProvider({
       createdAt: new Date().toISOString().split('T')[0],
       author: user?.name || 'You'
     };
-<<<<<<< HEAD
-    setCases(
-      cases.map((c) =>
-      c.id === caseId ?
-      {
-        ...c,
-        notes: [...(c.notes || []), newNote],
-        updated: 'Just now'
-      } :
-      c
-      )
-    );
-  };
-  const updateCaseStatus = (caseId: string, status: string) => {
-    setCases(
-      cases.map((c) =>
-      c.id === caseId ?
-      {
-        ...c,
-        status,
-        updated: 'Just now'
-      } :
-      c
-      )
-    );
-  };
-  const scheduleHearing = (caseId: string, date: string) => {
-    setCases(
-      cases.map((c) =>
-      c.id === caseId ?
-      {
-        ...c,
-        nextHearing: date,
-        daysLeft: calculateDaysLeft(date),
-        updated: 'Just now'
-      } :
-      c
-      )
-    );
-  };
-  const submitJudgment = (caseId: string, judgmentText: string) => {
-    setCases(
-      cases.map((c) =>
-      c.id === caseId ?
-      {
-        ...c,
-        judgment: judgmentText,
-        status: 'Closed',
-        updated: 'Just now'
-      } :
-      c
-      )
-    );
-  };
-  const updateMotionStatus = (id: number, status: 'Approved' | 'Rejected') => {
-    setMotions(
-      motions.map((m) =>
-      m.id === id ?
-      {
-        ...m,
-        status
-      } :
-      m
-      )
-    );
-  };
-  const signOrder = (id: number) => {
-    setOrders(
-      orders.map((o) =>
-      o.id === id ?
-      {
-        ...o,
-        status: 'Signed'
-      } :
-      o
-      )
-    );
-  };
-  const assignCaseToCourt = (caseId: string, court: string, judge: string) => {
-    setCases(
-      cases.map((c) =>
-      c.id === caseId ?
-      {
-        ...c,
-        court,
-        judge,
-        status: 'Assigned',
-        updated: 'Just now'
-      } :
-      c
-      )
-    );
-  };
-  const approveCaseRegistration = (caseId: string) => {
-    setCases(
-      cases.map((c) =>
-      c.id === caseId ?
-      {
-        ...c,
-        status: 'Filed',
-        updated: 'Just now'
-      } :
-      c
-      )
-    );
-  };
-  const assignCaseToLawyer = (caseId: string, lawyer: string) => {
-    setCases(
-      cases.map((c) =>
-      c.id === caseId ?
-      {
-        ...c,
-        lawyer,
-        updated: 'Just now'
-      } :
-      c
-      )
-    );
-  };
-  return (
-    <CasesContext.Provider
-      value={{
-        cases,
-        motions,
-        orders,
-        addCase,
-        updateCase,
-        deleteCase,
-        getCaseById,
-        addDocumentToCase,
-        addNoteToCase,
-        updateCaseStatus,
-        scheduleHearing,
-        submitJudgment,
-        updateMotionStatus,
-        signOrder,
-        assignCaseToCourt,
-        approveCaseRegistration,
-        assignCaseToLawyer
-      }}>
-
-      {children}
-    </CasesContext.Provider>);
-
-=======
     setCases(cases.map(c => c.id === caseId ? {
       ...c,
       notes: [...(c.notes || []), newNote],
@@ -682,28 +498,34 @@ export function CasesProvider({
       updated: 'Just now'
     } : c));
   };
-  return <CasesContext.Provider value={{
-    cases,
-    motions,
-    orders,
-    addCase,
-    updateCase,
-    deleteCase,
-    getCaseById,
-    addDocumentToCase,
-    addNoteToCase,
-    updateCaseStatus,
-    scheduleHearing,
-    submitJudgment,
-    updateMotionStatus,
-    signOrder,
-    assignCaseToCourt,
-    approveCaseRegistration,
-    assignCaseToLawyer
-  }}>
+  return (
+    <CasesContext.Provider
+      value={{
+        cases,
+        motions,
+        orders,
+        isLoading,
+        error,
+        refresh,
+        addCase,
+        updateCase,
+        deleteCase,
+        getCaseById,
+        addDocumentToCase,
+        addNoteToCase,
+        updateCaseStatus,
+        scheduleHearing,
+        submitJudgment,
+        updateMotionStatus,
+        signOrder,
+        assignCaseToCourt,
+        approveCaseRegistration,
+        assignCaseToLawyer
+      }}
+    >
       {children}
-    </CasesContext.Provider>;
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+    </CasesContext.Provider>
+  );
 }
 export function useCases() {
   const context = useContext(CasesContext);

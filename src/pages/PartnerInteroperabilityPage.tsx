@@ -1,72 +1,42 @@
-import React from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-<<<<<<< HEAD
-import {
-  Globe,
-  Server,
-  Lock,
-  ArrowRightLeft,
-  CheckCircle,
-  XCircle,
-  Database } from
-'lucide-react';
+import { Globe, Server, Lock, ArrowRightLeft, CheckCircle, Database } from 'lucide-react';
 export function PartnerInteroperabilityPage() {
   const partners = [
-  {
-=======
-import { Globe, Server, Lock, ArrowRightLeft, CheckCircle, XCircle, Database } from 'lucide-react';
-export function PartnerInteroperabilityPage() {
-  const partners = [{
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-    name: 'Nigerian Police Force',
-    status: 'Connected',
-    latency: '24ms',
-    lastSync: '2 mins ago',
-    type: 'Law Enforcement'
-<<<<<<< HEAD
-  },
-  {
-=======
-  }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-    name: 'Correctional Services',
-    status: 'Connected',
-    latency: '45ms',
-    lastSync: '10 mins ago',
-    type: 'Detention'
-<<<<<<< HEAD
-  },
-  {
-=======
-  }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-    name: 'Ministry of Justice',
-    status: 'Syncing',
-    latency: '120ms',
-    lastSync: 'In Progress',
-    type: 'Government'
-<<<<<<< HEAD
-  },
-  {
-=======
-  }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-    name: 'Legal Aid Council',
-    status: 'Offline',
-    latency: '-',
-    lastSync: '2 days ago',
-    type: 'Legal Aid'
-  }];
-<<<<<<< HEAD
+    {
+      name: 'Nigerian Police Force',
+      status: 'Connected',
+      latency: '24ms',
+      lastSync: '2 mins ago',
+      type: 'Law Enforcement',
+    },
+    {
+      name: 'Correctional Services',
+      status: 'Connected',
+      latency: '45ms',
+      lastSync: '10 mins ago',
+      type: 'Detention',
+    },
+    {
+      name: 'Ministry of Justice',
+      status: 'Syncing',
+      latency: '120ms',
+      lastSync: 'In Progress',
+      type: 'Government',
+    },
+    {
+      name: 'Legal Aid Council',
+      status: 'Offline',
+      latency: '-',
+      lastSync: '2 days ago',
+      type: 'Legal Aid',
+    },
+  ];
 
   return (
-    <Layout title="Partner Network & Interoperability">
-=======
-  return <Layout title="Partner Network & Interoperability">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+    <Layout title="Partner Network & Interoperability" showLogoBanner={false}>
       <div className="space-y-6">
         {/* Network Status Map/Overview */}
         <div className="bg-slate-900 rounded-xl p-8 text-white relative overflow-hidden">
@@ -97,12 +67,8 @@ export function PartnerInteroperabilityPage() {
 
         {/* Partner Nodes Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-<<<<<<< HEAD
-          {partners.map((partner) =>
-          <Card key={partner.name} className="border-l-4 border-l-blue-500">
-=======
-          {partners.map(partner => <Card key={partner.name} className="border-l-4 border-l-blue-500">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+          {partners.map((partner) => (
+            <Card key={partner.name} className="border-l-4 border-l-blue-500">
               <div className="flex items-start justify-between">
                 <div className="flex gap-4">
                   <div className="p-3 bg-slate-100 rounded-lg h-fit">
@@ -124,19 +90,7 @@ export function PartnerInteroperabilityPage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-<<<<<<< HEAD
-                  <Badge
-                  variant={
-                  partner.status === 'Connected' ?
-                  'success' :
-                  partner.status === 'Syncing' ?
-                  'warning' :
-                  'danger'
-                  }>
-
-=======
                   <Badge variant={partner.status === 'Connected' ? 'success' : partner.status === 'Syncing' ? 'warning' : 'danger'}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     {partner.status}
                   </Badge>
                   <Button size="sm" variant="outline" className="text-xs h-7">
@@ -144,12 +98,8 @@ export function PartnerInteroperabilityPage() {
                   </Button>
                 </div>
               </div>
-<<<<<<< HEAD
             </Card>
-          )}
-=======
-            </Card>)}
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+          ))}
         </div>
 
         {/* Security & Compliance */}
@@ -191,10 +141,6 @@ export function PartnerInteroperabilityPage() {
           </div>
         </Card>
       </div>
-<<<<<<< HEAD
-    </Layout>);
-
-=======
-    </Layout>;
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+    </Layout>
+  );
 }

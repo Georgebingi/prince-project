@@ -12,11 +12,11 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password, role } = req.body;
 
-    console.log('🔐 Login attempt:', { username, role, hasPassword: !!password });
+    console.log('[AUTH] Login attempt:', { username, role, hasPassword: !!password });
 
     // Validation
     if (!username || !password || !role) {
-      console.log('❌ Validation failed: missing fields');
+      console.log('[AUTH:ERROR] Validation failed: missing fields');
       return res.status(400).json({
         success: false,
         error: {
@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
       [username, username, role]
     );
 
-    console.log(`📊 Query result: Found ${users.length} user(s) matching criteria`);
+    console.log(`[AUTH] Query result: Found ${users.length} user(s) matching criteria`);
 
     if (users.length === 0) {
       // Try to find user without role/status filter to help debug
@@ -49,9 +49,9 @@ router.post('/login', async (req, res) => {
       
       if (allUsers.length > 0) {
         const foundUser = allUsers[0];
-        console.log(`⚠️  User found but: role=${foundUser.role} (expected ${role}), status=${foundUser.status} (expected active)`);
+        console.log(`[AUTH:WARN] User found but: role=${foundUser.role} (expected ${role}), status=${foundUser.status} (expected active)`);
       } else {
-        console.log(`⚠️  No user found with username/email: ${username}`);
+        console.log(`[AUTH:WARN] No user found with username/email: ${username}`);
       }
 
       return res.status(401).json({
@@ -64,11 +64,11 @@ router.post('/login', async (req, res) => {
     }
 
     const user = users[0];
-    console.log(`✅ User found: ${user.email} (ID: ${user.id}, Role: ${user.role})`);
+    console.log(`[AUTH] User found: ${user.email} (ID: ${user.id}, Role: ${user.role})`);
 
     // Check if password_hash exists and is valid
     if (!user.password_hash) {
-      console.error('❌ Login error: password_hash is missing for user:', user.email);
+      console.error('[AUTH:ERROR] password_hash is missing for user:', user.email);
       console.error('Available fields:', Object.keys(user));
       return res.status(401).json({
         success: false,
@@ -82,7 +82,7 @@ router.post('/login', async (req, res) => {
     // Verify password - handle both password_hash and PASSWORD_HASH (case variations)
     const passwordHash = user.password_hash || user.PASSWORD_HASH || user.passwordHash;
     if (!passwordHash) {
-      console.error('❌ Login error: Could not find password_hash field. Available fields:', Object.keys(user));
+      console.error('[AUTH:ERROR] Could not find password_hash field. Available fields:', Object.keys(user));
       return res.status(401).json({
         success: false,
         error: {
@@ -92,11 +92,11 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    console.log(`🔑 Comparing password... (hash length: ${passwordHash.length})`);
+    console.log(`[AUTH] Comparing password (hash length: ${passwordHash.length})`);
     const validPassword = await bcrypt.compare(password, passwordHash);
     
     if (!validPassword) {
-      console.log('❌ Password comparison failed');
+      console.log('[AUTH:ERROR] Password comparison failed');
       return res.status(401).json({
         success: false,
         error: {
@@ -106,7 +106,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    console.log('✅ Password verified successfully');
+    console.log('[AUTH] Password verified successfully');
 
     // Generate JWT token
     const token = jwt.sign(

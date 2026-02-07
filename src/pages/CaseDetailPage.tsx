@@ -1,14 +1,4 @@
-<<<<<<< HEAD
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  createElement,
-  Component } from
-'react';
-=======
-import React, { useEffect, useState, useRef } from 'react';
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
@@ -16,136 +6,165 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-<<<<<<< HEAD
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  FileText,
-  User,
-  Gavel,
-  Download,
-  MessageSquare,
-  Upload,
-  X,
-  Eye,
-  Save } from
-'lucide-react';
-import { useCases, CaseDocument } from '../contexts/CasesContext';
+import { ArrowLeft, Calendar, Clock, FileText, User, Gavel, Download, MessageSquare, Upload, X, Eye } from 'lucide-react';
+import { useCases, CaseDocument, type Case } from '../contexts/CasesContext';
 import { useAuth } from '../contexts/AuthContext';
+import { casesApi, documentsApi } from '../services/api';
+
+function mapBackendDocToFrontend(d: { id: number; name: string; type: string; file_size?: number; uploaded_at?: string; uploaded_by_name?: string }): CaseDocument {
+  return {
+    id: String(d.id),
+    name: d.name,
+    type: d.type,
+    size: d.file_size ? `${(d.file_size / 1024).toFixed(1)} KB` : '0 KB',
+    uploadedAt: d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString() : '',
+    uploadedBy: d.uploaded_by_name ?? 'Unknown'
+  };
+}
+
 export function CaseDetailPage() {
   const { id } = useParams();
-=======
-import { ArrowLeft, Calendar, Clock, FileText, User, Gavel, Download, MessageSquare, Upload, X, Eye } from 'lucide-react';
-import { useCases, CaseDocument } from '../contexts/CasesContext';
-import { useAuth } from '../contexts/AuthContext';
-export function CaseDetailPage() {
-  const {
-    id
-  } = useParams();
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    getCaseById,
-    addDocumentToCase,
-    updateCaseStatus,
-    scheduleHearing,
-    addNoteToCase
-  } = useCases();
-<<<<<<< HEAD
+  const { getCaseById, addDocumentToCase, updateCaseStatus, scheduleHearing, addNoteToCase, refresh } = useCases();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Check if we should open documents tab directly (from "Open Case" button)
   const shouldOpenDocuments = location.state?.openDocuments === true;
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'documents' | 'timeline' | 'notes'>(
-    shouldOpenDocuments ? 'documents' : 'overview');
-  const [selectedDocument, setSelectedDocument] = useState<CaseDocument | null>(
-    null
-  );
-=======
-  const {
-    user
-  } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  // Check if we should open documents tab directly (from "Open Case" button)
-  const shouldOpenDocuments = location.state?.openDocuments === true;
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'timeline' | 'notes'>(shouldOpenDocuments ? 'documents' : 'overview');
+  type TabId = 'overview' | 'documents' | 'timeline' | 'notes';
+  const [activeTab, setActiveTab] = useState<TabId>(shouldOpenDocuments ? 'documents' : 'overview');
   const [selectedDocument, setSelectedDocument] = useState<CaseDocument | null>(null);
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
   const [uploading, setUploading] = useState(false);
-  // Modal States
+  const [caseDetailFromApi, setCaseDetailFromApi] = useState<Case | null>(null);
+  const [caseNumericId, setCaseNumericId] = useState<number | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(true);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showHearingModal, setShowHearingModal] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
-  // Form States
   const [newStatus, setNewStatus] = useState('');
   const [hearingDate, setHearingDate] = useState('');
   const [noteText, setNoteText] = useState('');
-  // Decode ID from URL
   const decodedId = id ? decodeURIComponent(id) : '';
-  const caseData = getCaseById(decodedId);
-  // Check user role
-  const isLawyer = user?.role === 'lawyer';
-  // Set documents tab when coming from "Open Case" button
-  useEffect(() => {
-    if (shouldOpenDocuments) {
-      setActiveTab('documents');
-    }
-  }, [shouldOpenDocuments]);
-  if (!caseData) {
-<<<<<<< HEAD
-    return (
-      <Layout title="Case Not Found">
-=======
-    return <Layout title="Case Not Found">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-        <Card>
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">
-              Case Not Found
-            </h2>
-            <p className="text-slate-500 mb-4">
-              The case you're looking for doesn't exist.
-            </p>
-            <Button onClick={() => navigate('/cases')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Cases
-            </Button>
-          </div>
-        </Card>
-<<<<<<< HEAD
-      </Layout>);
 
-=======
-      </Layout>;
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-  }
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fetchCaseDetail = useCallback(async () => {
+    if (!decodedId) return;
+    setLoadingDetail(true);
+    try {
+      const res = await casesApi.getCaseById(decodedId);
+      if (res.success && res.data) {
+        const d = res.data as {
+          id: number;
+          case_number: string;
+          title: string;
+          type: string;
+          status: string;
+          priority: string;
+          next_hearing?: string | null;
+          filed_date?: string;
+          judge_name?: string | null;
+          court?: string | null;
+          updated_at?: string;
+          documents?: Array<{ id: number; name: string; type: string; file_size?: number; uploaded_at?: string; uploaded_by_name?: string }>;
+        };
+        setCaseNumericId(d.id);
+        setCaseDetailFromApi({
+          id: d.case_number ?? String(d.id),
+          title: d.title ?? '',
+          type: (d.type as Case['type']) ?? 'Civil',
+          status: d.status ?? 'Pending',
+          priority: (d.priority as Case['priority']) ?? 'Medium',
+          nextHearing: d.next_hearing ? new Date(d.next_hearing).toLocaleDateString() : 'TBD',
+          daysLeft: 0,
+          color: 'bg-slate-600',
+          pages: d.documents?.length ?? 0,
+          judge: d.judge_name ?? undefined,
+          court: d.court ?? undefined,
+          filed: d.filed_date ? new Date(d.filed_date).toLocaleDateString() : '',
+          updated: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : '',
+          documents: (d.documents ?? []).map(mapBackendDocToFrontend),
+          notes: []
+        });
+      }
+    } catch {
+      setCaseDetailFromApi(null);
+      setCaseNumericId(null);
+    } finally {
+      setLoadingDetail(false);
+    }
+  }, [decodedId]);
+
+  useEffect(() => {
+    fetchCaseDetail();
+  }, [fetchCaseDetail]);
+
+  useEffect(() => {
+    if (shouldOpenDocuments) setActiveTab('documents');
+  }, [shouldOpenDocuments]);
+
+  const caseDataFromContext = getCaseById(decodedId);
+  const caseData = caseDetailFromApi ?? caseDataFromContext;
+  const isLawyer = user?.role === 'lawyer';
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || !decodedId) return;
-    setUploading(true);
-<<<<<<< HEAD
-    Array.from(files).forEach((file) => {
-=======
-    Array.from(files).forEach(file => {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
-      setTimeout(() => {
+    const fileList = Array.from(files);
+    if (fileList.length === 0) return;
+    if (caseNumericId != null) {
+      setUploading(true);
+      try {
+        for (const file of fileList) {
+          await documentsApi.uploadDocument(file, String(caseNumericId), 'evidence');
+        }
+        await fetchCaseDetail();
+        await refresh();
+        alert(fileList.length === 1 ? 'Document uploaded successfully!' : `${fileList.length} documents uploaded successfully!`);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Upload failed.');
+      } finally {
+        setUploading(false);
+      }
+    } else {
+      setUploading(true);
+      fileList.forEach((file) => {
         const newDoc: CaseDocument = {
           id: `doc-${Date.now()}-${Math.random()}`,
           name: file.name,
           type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
           size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
           uploadedAt: new Date().toISOString().split('T')[0],
-          uploadedBy: 'You'
+          uploadedBy: user?.name ?? 'You'
         };
         addDocumentToCase(decodedId, newDoc);
-        setUploading(false);
-        alert('Document uploaded successfully!');
-      }, 1000);
-    });
+      });
+      setUploading(false);
+      alert(fileList.length === 1 ? 'Document added.' : `${fileList.length} documents added.`);
+    }
+    e.target.value = '';
   };
+  if (loadingDetail && !caseData) {
+    return (
+      <Layout title="Case" showLogoBanner={false}>
+        <Card><div className="p-8 text-center text-slate-500">Loading case...</div></Card>
+      </Layout>
+    );
+  }
+  if (!caseData) {
+    return (
+      <Layout title="Case Not Found" showLogoBanner={false}>
+        <Card>
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">Case Not Found</h2>
+            <p className="text-slate-500 mb-4">The case you're looking for doesn't exist.</p>
+            <Button onClick={() => navigate('/cases')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Cases
+            </Button>
+          </div>
+        </Card>
+      </Layout>
+    );
+  }
+
   const handleViewDocument = (doc: CaseDocument) => {
     setSelectedDocument(doc);
   };
@@ -189,7 +208,6 @@ export function CaseDetailPage() {
     }
   };
   // Mock timeline data combined with real updates
-<<<<<<< HEAD
   const timeline = [
   {
     date:
@@ -201,26 +219,12 @@ export function CaseDetailPage() {
     type: 'admin'
   },
   {
-=======
-  const timeline = [{
-    date: caseData.updated === 'Just now' ? new Date().toISOString().split('T')[0] : 'Recent',
-    title: 'Case Updated',
-    description: 'Case details were modified.',
-    type: 'admin'
-  }, {
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
     date: caseData.filed,
     title: 'Case Filed',
     description: `Case registered by ${caseData.judge}.`,
     type: 'admin'
   }];
-<<<<<<< HEAD
-
-  return (
-    <Layout title={`Case Details: ${caseData.id}`}>
-=======
-  return <Layout title={`Case Details: ${caseData.id}`}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
+  return <Layout title={`Case Details: ${caseData.id}`} showLogoBanner={false}>
       <div className="space-y-6">
         {/* Header / Navigation */}
         <div className="flex items-center gap-4">
@@ -233,19 +237,12 @@ export function CaseDetailPage() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-<<<<<<< HEAD
           {!isLawyer &&
           <Button size="sm" onClick={() => setShowStatusModal(true)}>
               <Gavel className="h-4 w-4 mr-2" />
               Update Status
             </Button>
           }
-=======
-          {!isLawyer && <Button size="sm" onClick={() => setShowStatusModal(true)}>
-              <Gavel className="h-4 w-4 mr-2" />
-              Update Status
-            </Button>}
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
         </div>
 
         {/* Case Header Card */}
@@ -253,7 +250,6 @@ export function CaseDetailPage() {
           <div className="flex flex-col md:flex-row justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-<<<<<<< HEAD
                 <Badge
                   variant="danger"
                   className="uppercase tracking-wider text-[10px]">
@@ -264,12 +260,6 @@ export function CaseDetailPage() {
                   variant="warning"
                   className="uppercase tracking-wider text-[10px]">
 
-=======
-                <Badge variant="danger" className="uppercase tracking-wider text-[10px]">
-                  {caseData.type}
-                </Badge>
-                <Badge variant="warning" className="uppercase tracking-wider text-[10px]">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   {caseData.status}
                 </Badge>
                 <span className="text-sm text-slate-500 flex items-center gap-1">
@@ -305,8 +295,7 @@ export function CaseDetailPage() {
                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
                   Priority
                 </p>
-<<<<<<< HEAD
-                <Badge
+                  <Badge
                   variant={
                   caseData.priority === 'High' ?
                   'danger' :
@@ -315,9 +304,6 @@ export function CaseDetailPage() {
                   'secondary'
                   }>
 
-=======
-                <Badge variant={caseData.priority === 'High' ? 'danger' : caseData.priority === 'Medium' ? 'warning' : 'secondary'}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   {caseData.priority}
                 </Badge>
               </div>
@@ -328,11 +314,11 @@ export function CaseDetailPage() {
         {/* Tabs */}
         <div className="border-b border-slate-200">
           <div className="flex gap-6 overflow-x-auto">
-<<<<<<< HEAD
-            {['Overview', 'Documents', 'Timeline', 'Notes'].map((tab) =>
+            {(['Overview', 'Documents', 'Timeline', 'Notes'] as const).map((tab) =>
             <button
               key={tab}
-              onClick={() => setActiveTab(tab.toLowerCase() as any)}
+              type="button"
+              onClick={() => setActiveTab(tab.toLowerCase() as TabId)}
               className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === tab.toLowerCase() ? 'text-primary' : 'text-slate-500 hover:text-slate-700'}`}>
 
                 {tab} {tab === 'Documents' && `(${caseData.documents.length})`}
@@ -341,12 +327,6 @@ export function CaseDetailPage() {
               }
               </button>
             )}
-=======
-            {['Overview', 'Documents', 'Timeline', 'Notes'].map(tab => <button key={tab} onClick={() => setActiveTab(tab.toLowerCase() as any)} className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === tab.toLowerCase() ? 'text-primary' : 'text-slate-500 hover:text-slate-700'}`}>
-                {tab} {tab === 'Documents' && `(${caseData.documents.length})`}
-                {activeTab === tab.toLowerCase() && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full"></div>}
-              </button>)}
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           </div>
         </div>
 
@@ -354,12 +334,8 @@ export function CaseDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
-<<<<<<< HEAD
             {activeTab === 'overview' &&
             <>
-=======
-            {activeTab === 'overview' && <>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <Card>
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">
                     Case Information
@@ -397,39 +373,26 @@ export function CaseDetailPage() {
                         {caseData.updated}
                       </p>
                     </div>
-<<<<<<< HEAD
                     {caseData.court &&
                   <div>
-=======
-                    {caseData.court && <div>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <p className="text-xs text-slate-500 uppercase mb-1">
                           Court
                         </p>
                         <p className="font-medium text-slate-900">
                           {caseData.court}
                         </p>
-<<<<<<< HEAD
                       </div>
                   }
                     {caseData.lawyer &&
                   <div>
-=======
-                      </div>}
-                    {caseData.lawyer && <div>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <p className="text-xs text-slate-500 uppercase mb-1">
                           Assigned Lawyer
                         </p>
                         <p className="font-medium text-slate-900">
                           {caseData.lawyer}
                         </p>
-<<<<<<< HEAD
                       </div>
                   }
-=======
-                      </div>}
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   </div>
                 </Card>
 
@@ -454,23 +417,16 @@ export function CaseDetailPage() {
                     </Button>
                   </div>
                 </Card>
-<<<<<<< HEAD
               </>
             }
 
             {activeTab === 'documents' &&
             <Card noPadding>
-=======
-              </>}
-
-            {activeTab === 'documents' && <Card noPadding>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <div className="p-4 border-b border-slate-100 bg-slate-50">
                   <div className="flex justify-between items-center">
                     <h3 className="font-semibold text-slate-900">
                       Case Documents
                     </h3>
-<<<<<<< HEAD
                     <Button
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
@@ -485,7 +441,8 @@ export function CaseDetailPage() {
                     multiple
                     accept=".pdf,.doc,.docx,.jpg,.png"
                     className="hidden"
-                    onChange={handleFileUpload} />
+                    onChange={handleFileUpload}
+                    aria-label="Upload case document" />
 
                   </div>
                 </div>
@@ -497,18 +454,6 @@ export function CaseDetailPage() {
                   key={doc.id}
                   className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
 
-=======
-                    <Button size="sm" onClick={() => fileInputRef.current?.click()} isLoading={uploading}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Document
-                    </Button>
-                    <input ref={fileInputRef} id="case-document-upload" name="case-document-upload" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.png" className="hidden" onChange={handleFileUpload} aria-label="Upload case document" />
-                  </div>
-                </div>
-
-                {caseData.documents.length > 0 ? <div className="divide-y divide-slate-100">
-                    {caseData.documents.map(doc => <div key={doc.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-red-50 text-red-600 rounded">
                             <FileText className="h-5 w-5" />
@@ -524,7 +469,6 @@ export function CaseDetailPage() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-<<<<<<< HEAD
                           <Button
                       variant="ghost"
                       size="sm"
@@ -566,29 +510,6 @@ export function CaseDetailPage() {
                     <div
                   className={`absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 border-white bg-slate-400`}>
                 </div>
-=======
-                          <Button variant="ghost" size="sm" onClick={() => handleViewDocument(doc)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => alert(`Downloading ${doc.name}`)}>
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>)}
-                  </div> : <div className="p-12 text-center text-slate-500">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>No documents uploaded yet.</p>
-                    <Button className="mt-4" onClick={() => fileInputRef.current?.click()}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload First Document
-                    </Button>
-                  </div>}
-              </Card>}
-
-            {activeTab === 'timeline' && <div className="relative border-l-2 border-slate-200 ml-3 space-y-8 py-2">
-                {timeline.map((event, i) => <div key={i} className="relative pl-8">
-                    <div className={`absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 border-white bg-slate-400`}></div>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
                       <div className="flex justify-between items-start mb-1">
                         <h4 className="font-semibold text-slate-900">
@@ -602,7 +523,6 @@ export function CaseDetailPage() {
                         {event.description}
                       </p>
                     </div>
-<<<<<<< HEAD
                   </div>
               )}
               </div>
@@ -610,12 +530,6 @@ export function CaseDetailPage() {
 
             {activeTab === 'notes' &&
             <div className="space-y-4">
-=======
-                  </div>)}
-              </div>}
-
-            {activeTab === 'notes' && <div className="space-y-4">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold text-slate-900">
                     Case Notes
@@ -626,15 +540,10 @@ export function CaseDetailPage() {
                   </Button>
                 </div>
 
-<<<<<<< HEAD
                 {caseData.notes && caseData.notes.length > 0 ?
               <div className="space-y-4">
                     {caseData.notes.map((note) =>
                 <Card key={note.id}>
-=======
-                {caseData.notes && caseData.notes.length > 0 ? <div className="space-y-4">
-                    {caseData.notes.map(note => <Card key={note.id}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                         <div className="flex justify-between items-start mb-2">
                           <span className="font-semibold text-slate-900">
                             {note.author}
@@ -646,7 +555,6 @@ export function CaseDetailPage() {
                         <p className="text-slate-700 whitespace-pre-wrap">
                           {note.text}
                         </p>
-<<<<<<< HEAD
                       </Card>
                 )}
                   </div> :
@@ -658,14 +566,6 @@ export function CaseDetailPage() {
               }
               </div>
             }
-=======
-                      </Card>)}
-                  </div> : <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                    <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                    <p>No notes added yet.</p>
-                  </div>}
-              </div>}
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           </div>
 
           {/* Sidebar Area */}
@@ -675,7 +575,6 @@ export function CaseDetailPage() {
                 Quick Actions
               </h3>
               <div className="space-y-2">
-<<<<<<< HEAD
                 {!isLawyer &&
                 <Button
                   variant="outline"
@@ -702,17 +601,6 @@ export function CaseDetailPage() {
                   size="sm"
                   onClick={() => setShowNoteModal(true)}>
 
-=======
-                {!isLawyer && <Button variant="outline" className="w-full justify-start" size="sm" onClick={() => setShowHearingModal(true)}>
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Schedule Hearing
-                  </Button>}
-                <Button variant="outline" className="w-full justify-start" size="sm" onClick={() => fileInputRef.current?.click()}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Upload Document
-                </Button>
-                <Button variant="outline" className="w-full justify-start" size="sm" onClick={() => setShowNoteModal(true)}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Add Note
                 </Button>
@@ -738,7 +626,6 @@ export function CaseDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-slate-600">Priority</span>
-<<<<<<< HEAD
                   <Badge
                     variant={
                     caseData.priority === 'High' ?
@@ -748,9 +635,6 @@ export function CaseDetailPage() {
                     'secondary'
                     }>
 
-=======
-                  <Badge variant={caseData.priority === 'High' ? 'danger' : caseData.priority === 'Medium' ? 'warning' : 'secondary'}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                     {caseData.priority}
                   </Badge>
                 </div>
@@ -761,26 +645,20 @@ export function CaseDetailPage() {
       </div>
 
       {/* Document Viewer Modal */}
-<<<<<<< HEAD
       {selectedDocument &&
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-=======
-      {selectedDocument && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <FileText className="h-5 w-5 text-slate-400" />
                 {selectedDocument.name}
               </h3>
-<<<<<<< HEAD
               <button
+              type="button"
               onClick={() => setSelectedDocument(null)}
-              className="p-1 hover:bg-slate-100 rounded-full">
+              className="p-1 hover:bg-slate-100 rounded-full"
+              aria-label="Close document preview">
 
-=======
-              <button onClick={() => setSelectedDocument(null)} className="p-1 hover:bg-slate-100 rounded-full" aria-label="Close document viewer">
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
@@ -794,20 +672,15 @@ export function CaseDetailPage() {
                   In a real application, this would display the PDF or document
                   content.
                 </p>
-<<<<<<< HEAD
                 <Button
                 onClick={() => alert(`Downloading ${selectedDocument.name}`)}>
 
-=======
-                <Button onClick={() => alert(`Downloading ${selectedDocument.name}`)}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                   <Download className="h-4 w-4 mr-2" />
                   Download to View
                 </Button>
               </div>
             </div>
           </div>
-<<<<<<< HEAD
         </div>
       }
 
@@ -849,38 +722,11 @@ export function CaseDetailPage() {
               variant="outline"
               onClick={() => setShowStatusModal(false)}>
 
-=======
-        </div>}
-
-      {/* Update Status Modal */}
-      {showStatusModal && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Update Case Status</h3>
-            <Select label="New Status" options={[{
-          value: 'In Progress',
-          label: 'In Progress'
-        }, {
-          value: 'Pending Judgment',
-          label: 'Pending Judgment'
-        }, {
-          value: 'Review',
-          label: 'Review'
-        }, {
-          value: 'Disposed',
-          label: 'Disposed'
-        }, {
-          value: 'Adjourned',
-          label: 'Adjourned'
-        }]} value={newStatus} onChange={e => setNewStatus(e.target.value)} placeholder="Select status..." />
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setShowStatusModal(false)}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 Cancel
               </Button>
               <Button onClick={handleUpdateStatus}>Update</Button>
             </div>
           </div>
-<<<<<<< HEAD
         </div>
       }
 
@@ -900,23 +746,11 @@ export function CaseDetailPage() {
               variant="outline"
               onClick={() => setShowHearingModal(false)}>
 
-=======
-        </div>}
-
-      {/* Schedule Hearing Modal */}
-      {showHearingModal && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Schedule Hearing</h3>
-            <Input label="Hearing Date" type="date" value={hearingDate} onChange={e => setHearingDate(e.target.value)} />
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setShowHearingModal(false)}>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
                 Cancel
               </Button>
               <Button onClick={handleScheduleHearing}>Schedule</Button>
             </div>
           </div>
-<<<<<<< HEAD
         </div>
       }
 
@@ -931,15 +765,6 @@ export function CaseDetailPage() {
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}>
           </textarea>
-=======
-        </div>}
-
-      {/* Add Note Modal */}
-      {showNoteModal && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Add Case Note</h3>
-            <textarea className="w-full h-32 p-3 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Enter note details..." value={noteText} onChange={e => setNoteText(e.target.value)}></textarea>
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
             <div className="flex justify-end gap-2 mt-6">
               <Button variant="outline" onClick={() => setShowNoteModal(false)}>
                 Cancel
@@ -947,13 +772,6 @@ export function CaseDetailPage() {
               <Button onClick={handleAddNote}>Save Note</Button>
             </div>
           </div>
-<<<<<<< HEAD
-        </div>
-      }
-    </Layout>);
-
-=======
         </div>}
     </Layout>;
->>>>>>> 57aaee95c582e73f35a15cb51cf06fbe324c181e
 }

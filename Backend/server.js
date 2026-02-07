@@ -49,10 +49,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health Check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV
+  });
+});
+
+// Root: clarify this is the API server (frontend runs on Vite port, e.g. 5173)
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Kaduna Court API is running. Use the frontend at http://localhost:5173',
+    api: 'http://localhost:3000/api',
+    health: 'http://localhost:3000/health'
   });
 });
 

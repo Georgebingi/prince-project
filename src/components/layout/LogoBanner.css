@@ -1,0 +1,10 @@
+/* Animation delays (no inline styles) */
+[data-animation-delay="0"] {
+  animation-delay: 0ms;
+}
+[data-animation-delay="100"] {
+  animation-delay: 100ms;
+}
+[data-animation-delay="200"] {
+  animation-delay: 200ms;
+}
