@@ -9,57 +9,72 @@ import {
   UserPlus,
   Search,
   Filter,
-  Mail,
-  Phone,
-  Shield,
   MoreVertical } from
 'lucide-react';
 import { useStaff } from '../contexts/StaffContext';
 export function StaffRegistrationPage() {
-  const { staff, addStaff, updateStaffStatus, deleteStaff } = useStaff();
-  // Form State
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    role: '',
-    department: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const handleCreateAccount = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (
-    !formData.firstName ||
-    !formData.lastName ||
-    !formData.email ||
-    !formData.password ||
-    !formData.role)
-    {
-      alert('Please fill in all required fields');
-      return;
-    }
-    setIsSubmitting(true);
-    setTimeout(() => {
-      addStaff({
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        role: formData.role,
-        department: formData.department || 'General',
-        status: 'Active'
-      });
-      setIsSubmitting(false);
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        role: '',
-        department: ''
-      });
-      alert('Staff account created successfully!');
-    }, 1000);
-  };
+    const { staff, addStaff } = useStaff();
+  
+    const [formData, setFormData] = useState({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      staffId: '',
+      role: '',
+      department: ''
+    });
+  
+    const [isSubmitting, setIsSubmitting] = useState(false);
+  
+    const handleCreateAccount = async (e: React.FormEvent) => {
+      e.preventDefault();
+  
+      if (
+        !formData.firstName ||
+        !formData.lastName ||
+        !formData.email ||
+        !formData.password ||
+        !formData.staffId ||
+        !formData.role
+      ) {
+        alert('Please fill in all required fields');
+        return;
+      }
+  
+      try {
+        setIsSubmitting(true);
+  
+        await addStaff({
+          fullName: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          staffId: formData.staffId,
+          role: formData.role.toLowerCase(), // ensure backend format
+          department: formData.department,
+          password: formData.password,
+        });
+  
+        alert('Staff account created successfully!');
+  
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          staffId: '',
+          role: '',
+          department: ''
+        });
+  
+      } catch (error: any) {
+        console.error(error);
+        alert(error?.message || 'Failed to create staff account');
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+  
+
   return (
     <Layout title="Staff Registration & Management" showLogoBanner={false}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -126,81 +141,51 @@ export function StaffRegistrationPage() {
                 })
                 } />
 
+              <Input
+                label="Staff ID *"
+                placeholder="JD001"
+                value={formData.staffId}
+                onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  staffId: e.target.value
+                })
+                } />
 
               <Select
                 label="Role *"
                 value={formData.role}
                 onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  role: e.target.value
-                })
+                  setFormData({ ...formData, role: e.target.value })
                 }
                 options={[
-                {
-                  value: 'Judge',
-                  label: 'Judge'
-                },
-                {
-                  value: 'Registrar',
-                  label: 'Registrar'
-                },
-                {
-                  value: 'Clerk',
-                  label: 'Clerk'
-                },
-                {
-                  value: 'Lawyer',
-                  label: 'Lawyer'
-                },
-                {
-                  value: 'Admin',
-                  label: 'Administrator'
-                },
-                {
-                  value: 'IT Admin',
-                  label: 'IT Administrator'
-                },
-                {
-                  value: 'Auditor',
-                  label: 'Auditor'
-                }]
-                }
-                placeholder="Select Role..." />
+                  { value: 'judge', label: 'Judge' },
+                  { value: 'registrar', label: 'Registrar' },
+                  { value: 'clerk', label: 'Clerk' },
+                  { value: 'lawyer', label: 'Lawyer' },
+                  { value: 'admin', label: 'Administrator' },
+                  { value: 'it_admin', label: 'IT Administrator' },
+                  { value: 'auditor', label: 'Auditor' }
+                ]}
+                placeholder="Select Role..."
+              />
 
 
               <Select
                 label="Department"
                 value={formData.department}
                 onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  department: e.target.value
-                })
+                  setFormData({ ...formData, department: e.target.value })
                 }
                 options={[
-                {
-                  value: 'High Court',
-                  label: 'High Court'
-                },
-                {
-                  value: 'Registry',
-                  label: 'Registry'
-                },
-                {
-                  value: 'IT Dept',
-                  label: 'IT Department'
-                },
-                {
-                  value: 'Legal',
-                  label: 'Legal Department'
-                },
-                {
-                  value: 'Admin',
-                  label: 'Administration'
-                }]
-                }
-                placeholder="Select Department..." />
+                  { value: 'High Court', label: 'High Court' },
+                  { value: 'Registry', label: 'Registry' },
+                  { value: 'IT Dept', label: 'IT Department' },
+                  { value: 'Legal', label: 'Legal Department' },
+                  { value: 'Admin', label: 'Administration' }
+                ]}
+                placeholder="Select Department..."
+              />
 
 
               <div className="pt-4">
@@ -282,9 +267,9 @@ export function StaffRegistrationPage() {
                       <td className="px-4 py-3">
                         <Badge
                         variant={
-                        user.status === 'Active' ?
+                        user.status === 'active' ?
                         'success' :
-                        user.status === 'Inactive' ?
+                        user.status === 'pending' ?
                         'secondary' :
                         'danger'
                         }>

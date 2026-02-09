@@ -13,6 +13,7 @@ interface ApiResponse<T> {
   error?: {
     code: string;
     message: string;
+
   };
   token?: string;
   refreshToken?: string;
@@ -167,7 +168,7 @@ export const authApi = {
    * Register new user
    */
   async register(userData: {
-    fullName: string;
+    name: string;
     email: string;
     phone?: string;
     staffId: string;
@@ -177,7 +178,15 @@ export const authApi = {
   }) {
     const response = await request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(userData),
+      body: JSON.stringify({
+        fullName: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        staffId: userData.staffId,
+        role: userData.role,
+        department: userData.department,
+        password: userData.password,
+      }),
     });
     return response;
   },
@@ -415,6 +424,15 @@ export const usersApi = {
    */
   async getJudges() {
     return request('/users/judges');
+  },
+
+  /**
+   * Delete user
+   */
+  async deleteUser(id: string) {
+    return request(`/users/${id}`, {
+      method: 'DELETE',
+    });
   },
 };
 

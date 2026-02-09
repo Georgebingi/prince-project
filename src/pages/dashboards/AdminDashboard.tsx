@@ -5,13 +5,13 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
-import { Users, Server, Activity, Database, Shield, Settings, UserPlus, FileText, Download, AlertTriangle, X, Bell, Send } from 'lucide-react';
+import { Users, Server, Activity, Database, Shield, Settings, UserPlus, FileText, Download, AlertTriangle, X, Bell, Send, Trash2, Check } from 'lucide-react';
 import { useStaff } from '../../contexts/StaffContext';
 import { useCases } from '../../contexts/CasesContext';
 import { useSystem } from '../../contexts/SystemContext';
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const { staff } = useStaff();
+  const { staff, deleteStaff, approveStaff } = useStaff();
   const { cases } = useCases();
   const { settings, toggleMaintenanceMode, addSystemNotification, isMaintenanceActive } = useSystem();
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -77,6 +77,28 @@ export function AdminDashboard() {
     setNotificationMessage('');
     setShowNotificationModal(false);
     alert('Notification sent to all users!');
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (window.confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
+      try {
+        await deleteStaff(userId);
+        alert(`User "${userName}" has been deleted successfully.`);
+      } catch (error) {
+        alert(`Failed to delete user "${userName}". Please try again.`);
+      }
+    }
+  };
+
+  const handleApproveUser = async (userId: string, userName: string) => {
+    if (window.confirm(`Are you sure you want to approve user "${userName}"?`)) {
+      try {
+        await approveStaff(userId);
+        alert(`User "${userName}" has been approved successfully.`);
+      } catch (error) {
+        alert(`Failed to approve user "${userName}". Please try again.`);
+      }
+    }
   };
 
   return (
@@ -216,6 +238,7 @@ export function AdminDashboard() {
                       <th className="px-4 py-3">Department</th>
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Last Active</th>
+                      <th className="px-4 py-3">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -252,6 +275,26 @@ export function AdminDashboard() {
                       </td>
                         <td className="px-4 py-3 text-slate-500 text-xs">
                           {user.lastActive}
+                        </td>
+                        <td className="px-4 py-3 flex gap-2">
+                          {user.status === 'pending' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleApproveUser(user.id, user.name)}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteUser(user.id, user.name)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </td>
                       </tr>)}
                   </tbody>

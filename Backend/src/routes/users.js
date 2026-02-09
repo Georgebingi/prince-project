@@ -253,9 +253,9 @@ router.get('/lawyers', async (req, res) => {
 router.get('/judges', async (req, res) => {
   try {
     const [judges] = await db.query(
-      `SELECT id, name, email, staff_id, department 
-       FROM users 
-       WHERE role = 'judge' AND status = 'active' 
+      `SELECT id, name, email, staff_id, department
+       FROM users
+       WHERE role = 'judge' AND status = 'active'
        ORDER BY name`
     );
 
@@ -265,6 +265,53 @@ router.get('/judges', async (req, res) => {
     });
   } catch (error) {
     console.error('Get judges error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// DELETE /api/users/:id - Delete user (admin only)
+router.delete('/:id', authorizeRole('admin', 'registrar'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const [users] = await db.query('SELECT id, name FROM users WHERE id = ?', [id]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'User not found'
+        }
+      });
+    }
+
+    // Delete the user
+    await db.query('DELETE FROM users WHERE id = ?', [id]);
+
+    // Log action
+    try {
+      await db.query(
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [req.user.id, req.user.name, 'delete', 'user', id, req.ip]
+      );
+    } catch (error) {
+      console.warn('Audit logs table might not exist');
+    }
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
     res.status(500).json({
       success: false,
       error: {

@@ -27,6 +27,8 @@ interface StaffContextType {
     department?: string;
     password: string;
   }) => Promise<void>;
+  deleteStaff: (id: string) => Promise<void>;
+  approveStaff: (id: string, staffId?: string) => Promise<void>;
 }
 
 const StaffContext = createContext<StaffContextType | undefined>(undefined);
@@ -103,46 +105,103 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     refresh();
   }, [refresh]);
 
-  const addStaff = async (newStaff: {
-    fullName: string;
-    email: string;
-    phone?: string;
-    staffId?: string;
-    role: string;
-    department?: string;
-    password: string;
-  }) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await authApi.register({
-        fullName: newStaff.fullName,
-        email: newStaff.email,
-        phone: newStaff.phone,
-        staffId: newStaff.staffId || newStaff.email,
-        role: newStaff.role,
-        department: newStaff.department,
-        password: newStaff.password,
-      });
+const addStaff = async (newStaff: {
+  fullName: string;
+  email: string;
+  phone?: string;
+  staffId?: string;
+  role: string;
+  department?: string;
+  password: string;
+}) => {
+  setIsLoading(true);
+  setError(null);
 
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Registration failed');
-      }
+  try {
+    const response = await authApi.register({
+      name: newStaff.fullName, // ✅ changed from fullName to name
+      email: newStaff.email,
+      phone: newStaff.phone,
+      staffId: newStaff.staffId || newStaff.email,
+      role: newStaff.role,
+      department: newStaff.department,
+      password: newStaff.password,
+    });
 
-      await refresh();
-    } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : 'Failed to register staff';
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
+    if (!response.success) {
+      throw new Error(response.error?.message || 'Registration failed');
     }
-  };
+
+    await refresh();
+  } catch (err) {
+    const message =
+      err instanceof ApiError
+        ? err.message
+        : err instanceof Error
+        ? err.message
+        : 'Failed to register staff';
+
+    setError(message);
+    throw err;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const deleteStaff = async (id: string) => {
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    const response = await usersApi.deleteUser(id);
+
+    if (!response.success) {
+      throw new Error(response.error?.message || 'Failed to delete user');
+    }
+
+    await refresh();
+  } catch (err) {
+    const message =
+      err instanceof ApiError
+        ? err.message
+        : err instanceof Error
+        ? err.message
+        : 'Failed to delete staff';
+
+    setError(message);
+    throw err;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const approveStaff = async (id: string, staffId?: string) => {
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    const response = await usersApi.approveUser(id, staffId);
+
+    if (!response.success) {
+      throw new Error(response.error?.message || 'Failed to approve user');
+    }
+
+    await refresh();
+  } catch (err) {
+    const message =
+      err instanceof ApiError
+        ? err.message
+        : err instanceof Error
+        ? err.message
+        : 'Failed to approve staff';
+
+    setError(message);
+    throw err;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <StaffContext.Provider
@@ -152,6 +211,8 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
         error,
         refresh,
         addStaff,
+        deleteStaff,
+        approveStaff,
       }}
     >
       {children}
