@@ -175,9 +175,126 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/refresh
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Refresh token required'
+        }
+      });
+    }
+
+    // Check if refresh token exists in sessions
+    const [sessions] = await db.query(
+      'SELECT user_id FROM sessions WHERE refresh_token = ? AND expires_at > NOW()',
+      [refreshToken]
+    );
+
+    if (sessions.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'AUTH_INVALID',
+          message: 'Invalid refresh token'
+        }
+      });
+    }
+
+    const userId = sessions[0].user_id;
+
+    // Get user details
+    const [users] = await db.query(
+      'SELECT id, name, email, role, staff_id, department FROM users WHERE id = ? AND status = ?',
+      [userId, 'active']
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'AUTH_INVALID',
+          message: 'User not found or inactive'
+        }
+      });
+    }
+
+    const user = users[0];
+
+    // Generate new access token
+    const newToken = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+        staffId: user.staff_id
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRY || '24h' }
+    );
+
+    // Generate new refresh token
+    const newRefreshToken = jwt.sign(
+      { id: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+    );
+
+    // Update session with new refresh token
+    await db.query(
+      'UPDATE sessions SET refresh_token = ?, expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE refresh_token = ?',
+      [newRefreshToken, refreshToken]
+    );
+
+    res.json({
+      success: true,
+      token: newToken,
+      refreshToken: newRefreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        staffId: user.staff_id
+      }
+    });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'AUTH_EXPIRED',
+          message: 'Refresh token expired'
+        }
+      });
+    }
+
+    console.error('Refresh error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
 // POST /api/auth/logout
 router.post('/logout', authenticateToken, async (req, res) => {
   try {
+    // Remove refresh token from sessions
+    try {
+      await db.query('DELETE FROM sessions WHERE user_id = ?', [req.user.id]);
+    } catch (error) {
+      console.warn('Sessions table not found or error deleting session');
+    }
+
     // Log logout action (if audit_logs table exists)
     try {
       await db.query(

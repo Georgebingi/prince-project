@@ -13,7 +13,17 @@ export function DocumentRepositoryPage() {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<{
+    id: string;
+    name: string;
+    type: string;
+    size: string;
+    uploadedAt: string;
+    uploadedBy: string;
+    category?: string;
+    caseId: string;
+    caseTitle: string;
+  } | null>(null);
   const [filter, setFilter] = useState<'all' | 'judgment' | 'evidence' | 'affidavit' | 'admin'>('all');
   const [selectedCategory, setSelectedCategory] = useState<'judgment' | 'affidavit' | 'evidence' | 'admin'>('evidence');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
@@ -116,7 +126,7 @@ export function DocumentRepositoryPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select label="Select Case" value={selectedCaseId} onChange={(e) => setSelectedCaseId(e.target.value)} options={[{ value: '', label: 'Choose a case...' }, ...cases.map((c) => ({ value: c.id, label: `${c.id} - ${c.title}` }))]} required />
-              <Select label="Document Category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value as any)} options={[{ value: 'judgment', label: 'Judgment' }, { value: 'affidavit', label: 'Affidavit' }, { value: 'evidence', label: 'Evidence File' }, { value: 'admin', label: 'Admin Record' }]} required />
+              <Select label="Document Category" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value as 'judgment' | 'affidavit' | 'evidence' | 'admin')} options={[{ value: 'judgment', label: 'Judgment' }, { value: 'affidavit', label: 'Affidavit' }, { value: 'evidence', label: 'Evidence File' }, { value: 'admin', label: 'Admin Record' }]} required />
             </div>
 
             <div
@@ -178,7 +188,7 @@ export function DocumentRepositoryPage() {
           {folders.map((folder) => (
             <button
               key={folder.name}
-              onClick={() => setFilter(folder.type as any)}
+              onClick={() => setFilter(folder.type as 'all' | 'judgment' | 'evidence' | 'affidavit' | 'admin')}
               className={`flex flex-col items-center p-4 bg-white border rounded-lg hover:shadow-md transition-all group text-center ${filter === folder.type ? 'border-primary ring-1 ring-primary bg-blue-50' : 'border-slate-200 hover:border-blue-300'}`}
             >
               <Folder className={`h-10 w-10 mb-2 transition-colors ${filter === folder.type ? 'text-primary' : 'text-blue-200 group-hover:text-blue-500'}`} />

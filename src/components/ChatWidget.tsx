@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, Fragment } from 'react';
+import { useEffect, useState, useRef, Fragment, useMemo } from 'react';
 import { MessageCircle, X, Send, Users, Search, Smile, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -32,7 +32,7 @@ export function ChatWidget() {
   const unreadCount = getUnreadCount();
   // Get selected user details directly from staff list
   const selectedUser = selectedUserId ? staff.find(s => s.id === selectedUserId) : null;
-  const conversationMessages = selectedUserId ? getConversationMessages(selectedUserId) : [];
+  const conversationMessages = useMemo(() => selectedUserId ? getConversationMessages(selectedUserId) : [], [selectedUserId, getConversationMessages]);
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current && view === 'chat') {

@@ -1,9 +1,20 @@
-# TODO: Add Delete User Functionality in Admin Dashboard
+# TODO: Fix Login Persistence and Auto-Update User Info
 
-## Steps to Complete
+## Backend Changes
+- [x] Add refresh token endpoint in Backend/src/routes/auth.js
+- [x] Add profile endpoint in Backend/src/routes/users.js
 
-- [ ] Add deleteUser method to usersApi in src/services/api.ts
-- [ ] Add deleteStaff function to StaffContext.tsx
-- [ ] Update AdminDashboard.tsx to include delete buttons in the staff table
-- [ ] Handle delete confirmation and error handling in AdminDashboard.tsx
-- [ ] Test the delete functionality for created and pending users
+## Frontend Changes
+- [x] Update api.ts to handle refresh tokens (store, retrieve, remove)
+- [x] Add refresh API call in authApi
+- [x] Add profile API call in usersApi
+- [x] Update AuthContext.tsx to:
+  - Store refresh token on login
+  - Attempt token refresh on app load if user exists
+  - Add periodic user info update
+  - Handle token expiry gracefully
+
+## Testing
+- [ ] Test login persistence across page refreshes
+- [ ] Test multiple browser sessions independence
+- [ ] Test auto-update of user info

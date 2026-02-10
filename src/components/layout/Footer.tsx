@@ -1,4 +1,3 @@
-import React from 'react';
 import { Code2 } from 'lucide-react';
 export function Footer() {
   return <footer className="bg-white border-t border-slate-200 py-4 px-4 sm:px-6 lg:px-8">

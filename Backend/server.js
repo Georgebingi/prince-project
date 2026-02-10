@@ -5,9 +5,34 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import routes from './src/routes/index.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
+import { apiLimiter, authLimiter, caseLimiter, readLimiter, staticLimiter } from './src/middleware/rateLimiter.js';
+
+// Simple in-memory cache for ultra-fast responses
+const cache = new Map();
+const CACHE_TTL = 30 * 1000; // 30 seconds cache
+
+// Cache middleware for GET requests
+function cacheMiddleware(req, res, next) {
+  if (req.method !== 'GET') return next();
+
+  const key = req.originalUrl;
+  const cached = cache.get(key);
+
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return res.json(cached.data);
+  }
+
+  // Override res.json to cache the response
+  const originalJson = res.json;
+  res.json = function(data) {
+    cache.set(key, { data, timestamp: Date.now() });
+    return originalJson.call(this, data);
+  };
+
+  next();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,13 +60,11 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate Limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api/', limiter);
+// Rate Limiting - Apply different limits to different endpoints
+app.use('/api/auth/', authLimiter); // Strict limits for auth (10 req/15min)
+app.use('/api/cases/', caseLimiter); // Moderate limits for case operations (50 req/5min)
+app.use('/api/users/lawyers', readLimiter); // Light limits for lawyer list (200 req/min)
+app.use('/api/', apiLimiter); // General API limits (1000 req/15min)
 
 // Body Parser
 app.use(express.json({ limit: '10mb' }));
@@ -66,8 +89,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api', routes);
+// API Routes with caching for ultra-fast responses
+app.use('/api', cacheMiddleware, routes);
 
 // 404 Handler
 app.use((req, res) => {

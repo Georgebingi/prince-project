@@ -1,14 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { BookOpen, Clock, Gavel, FileText, AlertCircle, CheckCircle, Scale, UserPlus, Search, Plus } from 'lucide-react';
+import { BookOpen, Clock, Gavel, FileText, AlertCircle, CheckCircle, Scale, UserPlus, Search, Plus, Trash2, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCases } from '../../contexts/CasesContext';
+import { usersApi } from '../../services/api';
 import { CreateCaseModal } from '../../components/CreateCaseModal';
+
+interface Lawyer {
+  id: number;
+  name: string;
+  email: string;
+  staff_id: string;
+  department: string;
+}
+
 export function JudgeDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -16,31 +26,87 @@ export function JudgeDashboard() {
     cases,
     motions,
     orders,
-    assignCaseToLawyer
+    assignCaseToLawyer,
+    deleteCase
   } = useCases();
+
   const [selectedCase, setSelectedCase] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState<string>('');
-  // Filter cases for current judge AND exclude closed cases
-  const myCases = cases.filter(c => c.judge === (user?.name ?? '') && c.status !== 'Closed' && c.status !== 'Disposed');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [caseToDelete, setCaseToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [lawyers, setLawyers] = useState<Array<{value: string, label: string}>>([]);
+
+  // Check if user can delete cases (Chief Judge, Admin, or Court Admin)
+  const canDeleteCases = user?.role === 'judge' || user?.role === 'admin' || user?.role === 'court_admin';
+
+  // Memoized filtered cases for performance - role-based filtering
+  const myCases = useMemo(() => {
+    if (user?.role === 'judge') {
+      // Judges see cases assigned to them
+      return cases.filter(c => c.judge === (user?.name ?? '') && c.status !== 'Closed' && c.status !== 'Disposed');
+    } else if (user?.role === 'lawyer') {
+      // Lawyers see cases assigned to them
+      return cases.filter(c => c.lawyer === (user?.name ?? '') && c.status !== 'Closed' && c.status !== 'Disposed');
+    } else {
+      // Other roles see all active cases
+      return cases.filter(c => c.status !== 'Closed' && c.status !== 'Disposed');
+    }
+  }, [cases, user?.name, user?.role]);
+
   // Cases that need lawyer assignment (mock logic: cases without lawyer assigned)
-  const unassignedCases = myCases.filter(c => !c.lawyer).slice(0, 3);
-  const pendingJudgment = myCases.filter(c => c.status === 'Pending Judgment').length;
-  const pendingMotions = motions.filter(m => m.status === 'Pending').length;
-  const draftOrders = orders.filter(o => o.status === 'Draft').length;
-  const lawyers = [{
-    value: 'Barrister Musa',
-    label: 'Barr. Musa'
-  }, {
-    value: 'Barr. Fatima Yusuf',
-    label: 'Barr. Fatima Yusuf'
-  }, {
-    value: 'Barr. John Doe',
-    label: 'Barr. John Doe'
-  }, {
-    value: 'Barr. Amina Bello',
-    label: 'Barr. Amina Bello'
-  }];
+  const unassignedCases = useMemo(() =>
+    myCases.filter(c => !c.lawyer).slice(0, 3),
+    [myCases]
+  );
+
+  const pendingJudgment = useMemo(() =>
+    myCases.filter(c => c.status === 'Pending Judgment').length,
+    [myCases]
+  );
+
+  const pendingMotions = useMemo(() =>
+    motions.filter(m => m.status === 'Pending').length,
+    [motions]
+  );
+
+  const draftOrders = useMemo(() =>
+    orders.filter(o => o.status === 'Draft').length,
+    [orders]
+  );
+
+  // Fetch lawyers from API with proper error handling and caching
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchLawyers = async () => {
+      try {
+        const response = await usersApi.getLawyers();
+        if (isMounted && response.success && Array.isArray(response.data)) {
+          const lawyerOptions = response.data.map((lawyer: Lawyer) => ({
+            value: String(lawyer.id), // Use ID as value for proper assignment
+            label: `Barr. ${lawyer.name}`
+          }));
+          setLawyers(lawyerOptions);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('Failed to fetch lawyers:', error);
+          setLawyers([]);
+        }
+      }
+    };
+
+    // Only fetch if user has permission and lawyers not already loaded
+    if (user && ['judge', 'admin', 'registrar', 'court_admin'].includes(user.role) && lawyers.length === 0) {
+      fetchLawyers();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, lawyers.length]); // Add lawyers.length to prevent refetching
   const handleAssign = (caseId: string) => {
     if (selectedLawyer) {
       assignCaseToLawyer(caseId, selectedLawyer);
@@ -62,6 +128,29 @@ export function JudgeDashboard() {
       }
     });
   };
+  
+  const handleDeleteClick = (e: React.MouseEvent, caseId: string) => {
+    e.stopPropagation();
+    setCaseToDelete(caseId);
+    setShowDeleteModal(true);
+  };
+  
+  const handleConfirmDelete = async () => {
+    if (!caseToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteCase(caseToDelete);
+      setShowDeleteModal(false);
+      setCaseToDelete(null);
+      setSelectedCase(null);
+      alert('Case deleted successfully!');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete case');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return <Layout title="Judge's Chambers" showLogoBanner={false}>
       <div className="space-y-6">
         {/* Quick Stats */}
@@ -178,7 +267,7 @@ export function JudgeDashboard() {
             </Card>
 
             {/* Case Library - Shelf View */}
-            <Card noPadding>
+            <Card noPadding glass>
               <div className="p-6 border-b border-slate-100">
                 <div className="flex items-center justify-between">
                   <div>
@@ -186,7 +275,12 @@ export function JudgeDashboard() {
                       My Case Library
                     </h3>
                     <p className="text-sm text-slate-500">
-                      Active cases assigned to your bench
+                      {user?.role === 'judge'
+                        ? 'Active cases assigned to your bench'
+                        : user?.role === 'lawyer'
+                        ? 'Active cases assigned to you'
+                        : 'Active cases in the system'
+                      }
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -242,6 +336,7 @@ export function JudgeDashboard() {
 
                 {/* Selected Case Details */}
                 {selectedCase && <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
+
                     {(() => {
                   const selected = myCases.find(c => c.id === selectedCase);
                   return selected ? <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -268,7 +363,19 @@ export function JudgeDashboard() {
                             <Button size="sm" onClick={() => handleOpenCase(selected.id)}>
                               Open Case
                             </Button>
+                            {canDeleteCases && (
+                              <Button 
+                                size="sm" 
+                                variant="danger" 
+                                onClick={(e) => handleDeleteClick(e, selected.id)}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
+                            )}
                           </div>
+
                         </div> : null;
                 })()}
                   </div>}
@@ -307,5 +414,55 @@ export function JudgeDashboard() {
       </div>
 
       <CreateCaseModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-full">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">Delete Case</h3>
+            </div>
+            
+            <p className="text-slate-600 mb-2">
+              Are you sure you want to delete this case?
+            </p>
+            <p className="text-sm text-slate-500 mb-6">
+              Case ID: <span className="font-mono font-medium">{caseToDelete}</span>
+            </p>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+              <p className="text-sm text-amber-800">
+                <strong>Warning:</strong> This action cannot be undone. All case data, including documents, parties, and timeline entries will be permanently removed.
+              </p>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setCaseToDelete(null);
+                }}
+                disabled={isDeleting}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancel
+              </Button>
+              <Button 
+                variant="danger" 
+                onClick={handleConfirmDelete}
+                isLoading={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                {isDeleting ? 'Deleting...' : 'Delete Case'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>;
 }

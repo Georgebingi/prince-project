@@ -1,4 +1,5 @@
-import { useEffect, useState, createContext, useContext } from 'react';
+import { useEffect, useState, createContext, useContext, type ReactNode } from 'react';
+
 import { useAuth } from './AuthContext';
 export interface SystemNotification {
   id: string;
@@ -121,7 +122,9 @@ export function SystemProvider({
       {children}
     </SystemContext.Provider>;
 }
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSystem() {
+
   const context = useContext(SystemContext);
   if (!context) {
     throw new Error('useSystem must be used within a SystemProvider');

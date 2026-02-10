@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, Bell, AlertTriangle, Info, CheckCircle, Wrench } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';

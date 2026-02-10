@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
@@ -6,7 +6,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
-import { FolderOpen, Calendar, Clock, FileText, UserPlus, CheckCircle, AlertCircle, Search, Plus, ArrowRight } from 'lucide-react';
+import { FolderOpen, Calendar, FileText, UserPlus, CheckCircle, Search, Plus, } from 'lucide-react';
 import { useCases } from '../../contexts/CasesContext';
 import { CreateCaseModal } from '../../components/CreateCaseModal';
 export function RegistrarDashboard() {

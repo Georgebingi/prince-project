@@ -66,9 +66,10 @@ export function StaffRegistrationPage() {
           department: ''
         });
   
-      } catch (error: any) {
+      } catch (error) {
         console.error(error);
-        alert(error?.message || 'Failed to create staff account');
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create staff account';
+        alert(errorMessage);
       } finally {
         setIsSubmitting(false);
       }

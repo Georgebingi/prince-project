@@ -14,9 +14,10 @@ router.get('/', async (req, res) => {
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT c.*, u.name as judge_name 
-      FROM cases c 
-      LEFT JOIN users u ON c.judge_id = u.id 
+      SELECT c.*, u.name as judge_name, lu.name as lawyer_name
+      FROM cases c
+      LEFT JOIN users u ON c.judge_id = u.id
+      LEFT JOIN users lu ON c.lawyer_id = lu.id
       WHERE 1=1
     `;
     const params = [];
@@ -26,10 +27,7 @@ router.get('/', async (req, res) => {
       query += ' AND c.judge_id = ?';
       params.push(req.user.id);
     } else if (req.user.role === 'lawyer') {
-      query += ` AND EXISTS (
-        SELECT 1 FROM case_parties cp 
-        WHERE cp.case_id = c.id AND cp.lawyer_id = ?
-      )`;
+      query += ' AND c.lawyer_id = ?';
       params.push(req.user.id);
     }
 
@@ -54,12 +52,44 @@ router.get('/', async (req, res) => {
       params.push(assignedTo);
     }
 
-    // Get total count
-    const countQuery = query.replace(
-      'SELECT c.*, u.name as judge_name',
-      'SELECT COUNT(*) as total'
-    );
-    const [countResult] = await db.query(countQuery, params);
+    // Get total count - simplified query without JOINs for better performance
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM cases c
+      WHERE 1=1
+    `;
+    const countParams = [];
+
+    // Apply same filters to count query
+    if (req.user.role === 'judge') {
+      countQuery += ' AND c.judge_id = ?';
+      countParams.push(req.user.id);
+    } else if (req.user.role === 'lawyer') {
+      countQuery += ' AND c.lawyer_id = ?';
+      countParams.push(req.user.id);
+    }
+
+    if (status) {
+      countQuery += ' AND c.status = ?';
+      countParams.push(status);
+    }
+
+    if (type) {
+      countQuery += ' AND c.type = ?';
+      countParams.push(type);
+    }
+
+    if (search) {
+      countQuery += ' AND (c.case_number LIKE ? OR c.title LIKE ?)';
+      countParams.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (assignedTo) {
+      countQuery += ' AND c.judge_id = ?';
+      countParams.push(assignedTo);
+    }
+
+    const [countResult] = await db.query(countQuery, countParams);
     const total = countResult[0].total;
 
     // Get paginated results
@@ -106,12 +136,9 @@ router.get('/:id', async (req, res) => {
     );
 
     if (cases.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: 'NOT_FOUND',
-          message: 'Case not found'
-        }
+      return res.json({
+        success: true,
+        message: `Case ${id} deleted successfully`
       });
     }
 
@@ -187,7 +214,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/cases - Create new case
-router.post('/', authorizeRole('judge', 'registrar', 'admin'), async (req, res) => {
+router.post('/', authorizeRole('judge', 'registrar', 'admin', 'lawyer'), async (req, res) => {
   try {
     const { title, type, description, priority, parties, nextHearing } = req.body;
 
@@ -272,6 +299,285 @@ router.post('/', authorizeRole('judge', 'registrar', 'admin'), async (req, res) 
     });
   } catch (error) {
     console.error('Create case error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// POST /api/cases/:id/request-assignment - Request case assignment (lawyers only)
+router.post('/:id/request-assignment', authorizeRole('lawyer'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Decode the case ID to handle IDs with slashes (e.g., "KDH/2026/001")
+    const encodedId = id;
+    const caseId = decodeURIComponent(encodedId);
+    const byNumericId = /^\d+$/.test(caseId);
+
+    // Get the case to verify it exists and is unassigned
+    const [cases] = await db.query(
+      `SELECT c.id, c.case_number, c.lawyer_id FROM cases c WHERE ${byNumericId ? 'c.id = ?' : 'c.case_number = ?'}`,
+      [byNumericId ? parseInt(caseId, 10) : caseId]
+    );
+
+    if (cases.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Case not found'
+        }
+      });
+    }
+
+    const caseData = cases[0];
+
+    // Check if case is already assigned
+    if (caseData.lawyer_id) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'ALREADY_ASSIGNED',
+          message: 'Case is already assigned to a lawyer'
+        }
+      });
+    }
+
+    // Check if lawyer already has a pending request for this case
+    try {
+      const [existingRequests] = await db.query(
+        `SELECT id FROM case_assignment_requests
+         WHERE case_id = ? AND lawyer_id = ? AND status = 'pending'`,
+        [caseData.id, req.user.id]
+      );
+
+      if (existingRequests.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'REQUEST_EXISTS',
+            message: 'You already have a pending assignment request for this case'
+          }
+        });
+      }
+    } catch (error) {
+      // Table might not exist, create it
+      console.warn('case_assignment_requests table might not exist, creating...');
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS case_assignment_requests (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          case_id INT NOT NULL,
+          lawyer_id INT NOT NULL,
+          requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+          reviewed_by INT NULL,
+          reviewed_at TIMESTAMP NULL,
+          FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE,
+          FOREIGN KEY (lawyer_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+        )
+      `);
+    }
+
+    // Insert assignment request
+    await db.query(
+      `INSERT INTO case_assignment_requests (case_id, lawyer_id, status)
+       VALUES (?, ?, 'pending')`,
+      [caseData.id, req.user.id]
+    );
+
+    // Add timeline entry
+    try {
+      await db.query(
+        `INSERT INTO case_timeline (case_id, date, title, description, type, created_by)
+         VALUES (?, CURDATE(), ?, ?, ?, ?)`,
+        [caseData.id, 'Assignment Requested', `Lawyer ${req.user.name} requested assignment to case ${caseData.case_number}`, 'assignment_request', req.user.id]
+      );
+    } catch (error) {
+      console.warn('Case timeline table might not exist');
+    }
+
+    // Log action
+    try {
+      await db.query(
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [req.user.id, req.user.name, 'request_assignment', 'case', caseData.id, req.ip]
+      );
+    } catch (error) {
+      console.warn('Audit logs table might not exist');
+    }
+
+    res.json({
+      success: true,
+      message: 'Assignment request submitted successfully. A judge will review your request.'
+    });
+  } catch (error) {
+    console.error('Request assignment error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// PUT /api/cases/:id/assign-lawyer - Assign lawyer to case
+router.put('/:id/assign-lawyer', authorizeRole('judge', 'registrar', 'admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { lawyerId } = req.body;
+
+    if (!lawyerId) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Lawyer ID is required'
+        }
+      });
+    }
+
+    // Decode the case ID to handle IDs with slashes (e.g., "KDH/2026/001")
+    const encodedId = id;
+    const caseId = decodeURIComponent(encodedId);
+    const byNumericId = /^\d+$/.test(caseId);
+
+    // Get the case to verify it exists
+    const [cases] = await db.query(
+      `SELECT c.id, c.case_number FROM cases c WHERE ${byNumericId ? 'c.id = ?' : 'c.case_number = ?'}`,
+      [byNumericId ? parseInt(caseId, 10) : caseId]
+    );
+
+    if (cases.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Case not found'
+        }
+      });
+    }
+
+    const caseIdNumeric = cases[0].id;
+
+    // Update the case with the assigned lawyer
+    await db.query(
+      'UPDATE cases SET lawyer_id = ? WHERE id = ?',
+      [lawyerId, caseIdNumeric]
+    );
+
+    // Add timeline entry
+    try {
+      await db.query(
+        `INSERT INTO case_timeline (case_id, date, title, description, type, created_by)
+         VALUES (?, CURDATE(), ?, ?, ?, ?)`,
+        [caseIdNumeric, 'Lawyer Assigned', `Lawyer assigned to case ${cases[0].case_number}`, 'assignment', req.user.id]
+      );
+    } catch (error) {
+      console.warn('Case timeline table might not exist');
+    }
+
+    // Log action
+    try {
+      await db.query(
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [req.user.id, req.user.name, 'assign_lawyer', 'case', caseIdNumeric, req.ip]
+      );
+    } catch (error) {
+      console.warn('Audit logs table might not exist');
+    }
+
+    res.json({
+      success: true,
+      message: 'Lawyer assigned successfully'
+    });
+  } catch (error) {
+    console.error('Assign lawyer error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// DELETE /api/cases/:id - Delete case (Chief Judge, Admin, or Court Admin only) with URL decoding
+router.delete('/:id', authorizeRole('judge', 'admin', 'court_admin'), async (req, res) => {
+  try {
+    // Decode the case ID to handle IDs with slashes (e.g., "KDH/2026/001")
+    const encodedId = req.params.id;
+    const id = decodeURIComponent(encodedId);
+    const byNumericId = /^\d+$/.test(id);
+
+    // Get the case to get the numeric ID and case number
+    const [cases] = await db.query(
+      `SELECT c.id, c.case_number FROM cases c WHERE ${byNumericId ? 'c.id = ?' : 'c.case_number = ?'}`,
+      [byNumericId ? parseInt(id, 10) : id]
+    );
+
+    if (cases.length === 0) {
+      return res.json({
+        success: true,
+        message: `Case ${id} deleted successfully`
+      });
+    }
+
+    const caseIdNumeric = cases[0].id;
+    const caseNumber = cases[0].case_number;
+
+    // Delete related records first (to maintain referential integrity)
+    // Delete case parties
+    try {
+      await db.query('DELETE FROM case_parties WHERE case_id = ?', [caseIdNumeric]);
+    } catch (error) {
+      console.warn('Case parties table might not exist or error deleting:', error.message);
+    }
+
+    // Delete case timeline entries
+    try {
+      await db.query('DELETE FROM case_timeline WHERE case_id = ?', [caseIdNumeric]);
+    } catch (error) {
+      console.warn('Case timeline table might not exist or error deleting:', error.message);
+    }
+
+    // Delete documents (we'll keep the files on disk for now, just remove DB records)
+    try {
+      await db.query('DELETE FROM documents WHERE case_id = ?', [caseIdNumeric]);
+    } catch (error) {
+      console.warn('Documents table might not exist or error deleting:', error.message);
+    }
+
+    // Finally, delete the case
+    await db.query('DELETE FROM cases WHERE id = ?', [caseIdNumeric]);
+
+    // Log the action
+    try {
+      await db.query(
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [req.user.id, req.user.name, 'delete', 'case', caseIdNumeric, req.ip]
+      );
+    } catch (error) {
+      console.warn('Audit logs table might not exist:', error.message);
+    }
+
+    res.json({
+      success: true,
+      message: `Case ${caseNumber} deleted successfully`
+    });
+  } catch (error) {
+    console.error('Delete case error:', error);
     res.status(500).json({
       success: false,
       error: {

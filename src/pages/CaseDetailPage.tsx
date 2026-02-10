@@ -6,10 +6,11 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-import { ArrowLeft, Calendar, Clock, FileText, User, Gavel, Download, MessageSquare, Upload, X, Eye } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, FileText, User, Gavel, Download, MessageSquare, Upload, X, Eye, Trash2 } from 'lucide-react';
 import { useCases, CaseDocument, type Case } from '../contexts/CasesContext';
 import { useAuth } from '../contexts/AuthContext';
 import { casesApi, documentsApi } from '../services/api';
+
 
 function mapBackendDocToFrontend(d: { id: number; name: string; type: string; file_size?: number; uploaded_at?: string; uploaded_by_name?: string }): CaseDocument {
   return {
@@ -26,8 +27,9 @@ export function CaseDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { getCaseById, addDocumentToCase, updateCaseStatus, scheduleHearing, addNoteToCase, refresh } = useCases();
+  const { getCaseById, addDocumentToCase, updateCaseStatus, scheduleHearing, addNoteToCase, refresh, deleteCase } = useCases();
   const { user } = useAuth();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shouldOpenDocuments = location.state?.openDocuments === true;
   type TabId = 'overview' | 'documents' | 'timeline' | 'notes';
@@ -43,7 +45,13 @@ export function CaseDetailPage() {
   const [newStatus, setNewStatus] = useState('');
   const [hearingDate, setHearingDate] = useState('');
   const [noteText, setNoteText] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const decodedId = id ? decodeURIComponent(id) : '';
+  
+  // Check if user can delete cases (Chief Judge, Admin, or Court Admin)
+  const canDeleteCases = user?.role === 'judge' || user?.role === 'admin' || user?.role === 'court_admin';
+
 
   const fetchCaseDetail = useCallback(async () => {
     if (!decodedId) return;
@@ -207,6 +215,25 @@ export function CaseDetailPage() {
       alert('Note added successfully!');
     }
   };
+  
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+  
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteCase(decodedId);
+      setShowDeleteModal(false);
+      alert('Case deleted successfully!');
+      navigate('/cases');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete case');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Mock timeline data combined with real updates
   const timeline = [
   {
@@ -237,12 +264,24 @@ export function CaseDetailPage() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
+          {canDeleteCases && (
+            <Button 
+              size="sm" 
+              variant="danger" 
+              onClick={handleDeleteClick}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Case
+            </Button>
+          )}
           {!isLawyer &&
           <Button size="sm" onClick={() => setShowStatusModal(true)}>
               <Gavel className="h-4 w-4 mr-2" />
               Update Status
             </Button>
           }
+
         </div>
 
         {/* Case Header Card */}
@@ -773,5 +812,52 @@ export function CaseDetailPage() {
             </div>
           </div>
         </div>}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-full">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">Delete Case</h3>
+            </div>
+            
+            <p className="text-slate-600 mb-2">
+              Are you sure you want to delete this case?
+            </p>
+            <p className="text-sm text-slate-500 mb-6">
+              Case ID: <span className="font-mono font-medium">{decodedId}</span>
+            </p>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+              <p className="text-sm text-amber-800">
+                <strong>Warning:</strong> This action cannot be undone. All case data, including documents, parties, and timeline entries will be permanently removed.
+              </p>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancel
+              </Button>
+              <Button 
+                variant="danger" 
+                onClick={handleConfirmDelete}
+                isLoading={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                {isDeleting ? 'Deleting...' : 'Delete Case'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>;
 }

@@ -1,4 +1,3 @@
-import React, { Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
@@ -12,32 +11,60 @@ import {
   Plus,
   Search,
   MessageSquare,
-  ArrowRight } from
-'lucide-react';
+} from 'lucide-react';
 import { useCases } from '../../contexts/CasesContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { casesApi } from '../../services/api';
 export function LawyerDashboard() {
   const navigate = useNavigate();
   const { cases } = useCases();
   const { user } = useAuth();
   // Filter cases assigned to the current lawyer
-  // In a real app, we'd use the logged-in user's name or ID
-  // For demo purposes, we'll match "Barrister Musa" or show all if no lawyer assigned
   const lawyerName = user?.name || 'Barrister Musa';
-  const myCases = cases.filter(
-    (c) =>
-    c.lawyer === lawyerName ||
-    c.lawyer === 'Barr. Musa' ||
-    // Handle variations
-    // Fallback for demo: show some cases if none assigned
-    !c.lawyer && (c.id === 'KDH/2024/001' || c.id === 'KDH/2024/022')
-  );
+  const myCases = cases.filter((c) => {
+    // Check if case is assigned to this lawyer
+    if (c.lawyer === lawyerName) return true;
+    if (c.lawyer === 'Barr. Musa' && lawyerName === 'Barrister Musa') return true;
+    if (c.lawyer === 'Barrister Musa' && lawyerName === 'Barrister Musa') return true;
+
+    return false;
+  });
   const activeCases = myCases.slice(0, 5).map((c) => ({
     id: c.id,
     title: c.title,
     status: c.status,
     nextDate: c.nextHearing !== 'TBD' ? c.nextHearing : 'Not Scheduled'
   }));
+
+  // Handle case assignment request
+  const handleAssignCase = async (caseId: string) => {
+    try {
+      const response = await casesApi.requestCaseAssignment(caseId);
+      if (response.success) {
+        alert('Assignment request submitted successfully. A judge will review your request.');
+        // Refresh cases to update the UI
+        window.location.reload();
+      } else {
+        alert('Failed to submit assignment request. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Assignment request error:', error);
+      if (error.code === 'ALREADY_ASSIGNED') {
+        alert('This case is already assigned to a lawyer.');
+        // Refresh cases to update the UI
+        window.location.reload();
+      } else if (error.code === 'REQUEST_EXISTS') {
+        alert('You already have a pending assignment request for this case.');
+      } else if (error.status === 400) {
+        alert('Unable to request assignment for this case. It may already be assigned.');
+        // Refresh cases to update the UI
+        window.location.reload();
+      } else {
+        alert('Failed to submit assignment request. Please check your connection and try again.');
+      }
+    }
+  };
+
   const recentDocuments = [
   {
     name: 'Defense Motion.pdf',
@@ -76,7 +103,7 @@ export function LawyerDashboard() {
             </p>
             <div className="mt-6 flex gap-3">
               <Button
-                className="bg-white text-blue-900 hover:bg-blue-50 border-none"
+                className="bg-blue-50 text-blue-900 hover:bg-blue-50 border-none"
                 onClick={() => navigate('/cases')}>
 
                 <Plus className="h-4 w-4 mr-2" />
@@ -111,43 +138,84 @@ export function LawyerDashboard() {
                 </Button>
               </div>
               <div className="space-y-4">
-                {activeCases.length > 0 ?
-                activeCases.map((c) =>
-                <div
-                  key={c.id}
-                  className="group flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer"
-                  onClick={() =>
-                  navigate(`/cases/${encodeURIComponent(c.id)}`)
-                  }>
+                {/* Cases Section */}
+                {activeCases.length > 0 ? (
+                  <>
+                    <h4 className="text-md font-semibold text-slate-900 flex items-center gap-2 mb-4">
+                      <Briefcase className="h-4 w-4" />
+                      Assigned Cases
+                    </h4>
+                    {activeCases.map((c) =>
+                      <div
+                        key={c.id}
+                        className="group flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors cursor-pointer"
+                        onClick={() =>
+                        navigate(`/cases/${encodeURIComponent(c.id)}`)
+                        }>
 
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                            {c.id}
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                              {c.id}
+                            </span>
+                            <Badge variant="secondary">{c.status}</Badge>
+                          </div>
+                          <h4 className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
+                            {c.title}
+                          </h4>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center text-sm text-slate-600 gap-1 justify-end">
+                            <Calendar className="h-4 w-4" />
+                            <span>{c.nextDate}</span>
+                          </div>
+                          <span className="text-xs text-slate-400">
+                            Next Hearing
                           </span>
-                          <Badge variant="secondary">{c.status}</Badge>
                         </div>
-                        <h4 className="font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                          {c.title}
-                        </h4>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center text-sm text-slate-600 gap-1 justify-end">
-                          <Calendar className="h-4 w-4" />
-                          <span>{c.nextDate}</span>
-                        </div>
-                        <span className="text-xs text-slate-400">
-                          Next Hearing
-                        </span>
-                      </div>
-                    </div>
-                ) :
+                    )}
+                  </>
+                ) : (
+                  (() => {
+                    const unassignedCases = cases.filter(c => !c.lawyer && c.status !== 'Closed' && c.status !== 'Disposed').slice(0, 3);
+                    return unassignedCases.length > 0 ? (
+                      <>
+                        {unassignedCases.map(c => (
+                          <div key={c.id} className="p-4 bg-amber-50 rounded-lg border border-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-mono text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+                                  {c.id}
+                                </span>
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {c.type}
+                                </Badge>
+                              </div>
+                              <h4 className="font-medium text-slate-900">
+                                {c.title}
+                              </h4>
+                              <p className="text-xs text-slate-500">
+                                Filed {c.filed}
+                              </p>
+                            </div>
 
-                <div className="text-center py-8 text-slate-500">
-                    <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>No active cases assigned.</p>
-                  </div>
-                }
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <Button size="sm" onClick={() => handleAssignCase(c.id)} className="bg-amber-600 hover:bg-amber-700 text-white">
+                                Request Assignment
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-slate-500">
+                        <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                        <p>No active cases assigned.</p>
+                      </div>
+                    );
+                  })()
+                )}
               </div>
             </Card>
 

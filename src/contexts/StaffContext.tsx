@@ -33,7 +33,17 @@ interface StaffContextType {
 
 const StaffContext = createContext<StaffContextType | undefined>(undefined);
 
-const mapUserToStaff = (user: any): StaffMember => ({
+const mapUserToStaff = (user: {
+  id?: string | number;
+  name: string;
+  email?: string;
+  role: string;
+  department?: string;
+  status?: string;
+  updated_at?: string;
+  created_at?: string;
+  staff_id?: string;
+}): StaffMember => ({
   id: String(user.id ?? user.staff_id ?? user.email ?? crypto.randomUUID()),
   name: user.name,
   role: user.role,
@@ -76,7 +86,17 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await usersApi.getUsers();
       if (res.success && res.data) {
-        const mapped = (res.data as any[]).map(mapUserToStaff);
+        const mapped = (res.data as {
+          id?: string | number;
+          name: string;
+          email?: string;
+          role: string;
+          department?: string;
+          status?: string;
+          updated_at?: string;
+          created_at?: string;
+          staff_id?: string;
+        }[]).map(mapUserToStaff);
         setStaff(mapped);
       } else {
         throw new Error(res.error?.message || 'Failed to load users');
@@ -220,7 +240,9 @@ const approveStaff = async (id: string, staffId?: string) => {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useStaff() {
+
   const context = useContext(StaffContext);
   if (!context) {
     throw new Error('useStaff must be used within a StaffProvider');

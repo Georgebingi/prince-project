@@ -1,10 +1,12 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CasesProvider } from './contexts/CasesContext';
 import { StaffProvider } from './contexts/StaffContext';
 import { SystemProvider } from './contexts/SystemContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { LiquidGlass } from './components/LiquidGlass';
 import { ChatWidget } from './components/ChatWidget';
 import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
@@ -31,9 +33,30 @@ import { ReviewMotionsPage } from './pages/ReviewMotionsPage';
 import { SignOrdersPage } from './pages/SignOrdersPage';
 function DashboardRouter() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Store current route for refresh persistence
+  useEffect(() => {
+    if (user && location.pathname !== '/login' && location.pathname !== '/signup' && location.pathname !== '/') {
+      localStorage.setItem('court_last_route', location.pathname + location.search);
+    }
+  }, [location, user]);
+
+  // Redirect to stored route on refresh if authenticated
+  useEffect(() => {
+    if (user) {
+      const lastRoute = localStorage.getItem('court_last_route');
+      if (lastRoute && location.pathname === '/dashboard') {
+        navigate(lastRoute, { replace: true });
+      }
+    }
+  }, [user, navigate, location.pathname]);
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
   // Route to role-specific dashboard
   switch (user.role) {
     case 'judge':
@@ -43,15 +66,12 @@ function DashboardRouter() {
     case 'clerk':
       return <ClerkDashboard />;
     case 'admin':
-      return <AdminDashboard />;
     case 'it_admin':
-      return <AdminDashboard />;
     case 'court_admin':
+    case 'auditor':
       return <AdminDashboard />;
     case 'lawyer':
       return <LawyerDashboard />;
-    case 'auditor':
-      return <AdminDashboard />;
     case 'partner':
       return <PartnerDashboard />;
     default:
@@ -65,7 +85,7 @@ function AppContent() {
   const showChat =
   user && !['/', '/login', '/signup'].includes(location.pathname);
   return (
-    <>
+    <LiquidGlass>
       <Routes>
         <Route path="/" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -173,7 +193,7 @@ function AppContent() {
       </Routes>
 
       {showChat && <ChatWidget />}
-    </>);
+    </LiquidGlass>);
 
 }
 export function App() {

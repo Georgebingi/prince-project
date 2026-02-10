@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
 
+interface NetworkConnection {
+  effectiveType?: string;
+  downlink?: number;
+  rtt?: number;
+  addEventListener: (event: string, callback: () => void) => void;
+  removeEventListener: (event: string, callback: () => void) => void;
+}
+
 interface NetworkStatus {
   isOnline: boolean;
   isSlowConnection: boolean;
@@ -16,18 +24,19 @@ export function useNetworkStatus(): NetworkStatus {
 
   useEffect(() => {
     // Check connection type if available
-    const connection = (navigator as any).connection || 
-                      (navigator as any).mozConnection || 
-                      (navigator as any).webkitConnection;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const connection = (navigator as unknown as { connection?: NetworkConnection; mozConnection?: NetworkConnection; webkitConnection?: NetworkConnection }).connection || 
+                      (navigator as unknown as { mozConnection?: NetworkConnection }).mozConnection || 
+                      (navigator as unknown as { webkitConnection?: NetworkConnection }).webkitConnection;
 
     const updateNetworkStatus = () => {
       const isOnline = navigator.onLine;
       
       // Determine if connection is slow
       let isSlowConnection = false;
-      let effectiveType: string | undefined;
-      let downlink: number | undefined;
-      let rtt: number | undefined;
+      let effectiveType: string | undefined = undefined;
+      let downlink: number | undefined = undefined;
+      let rtt: number | undefined = undefined;
 
       if (connection) {
         effectiveType = connection.effectiveType;

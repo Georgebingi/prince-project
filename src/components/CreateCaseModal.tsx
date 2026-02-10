@@ -122,7 +122,7 @@ export function CreateCaseModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select label="Case Type *" value={formData.type} onChange={e => setFormData({
               ...formData,
-              type: e.target.value as any
+              type: e.target.value as 'Criminal' | 'Civil' | 'Family' | 'Commercial' | 'Appeal'
             })} options={[{
               value: 'Criminal',
               label: 'Criminal'
@@ -142,7 +142,7 @@ export function CreateCaseModal({
 
               <Select label="Priority *" value={formData.priority} onChange={e => setFormData({
               ...formData,
-              priority: e.target.value as any
+              priority: e.target.value as 'High' | 'Medium' | 'Low'
             })} options={[{
               value: 'High',
               label: 'High Priority'

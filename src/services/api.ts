@@ -56,10 +56,25 @@ function saveAuthToken(token: string): void {
 }
 
 /**
+ * Get refresh token from localStorage
+ */
+function getRefreshToken(): string | null {
+  return localStorage.getItem('refresh_token');
+}
+
+/**
+ * Save refresh token to localStorage
+ */
+function saveRefreshToken(token: string): void {
+  localStorage.setItem('refresh_token', token);
+}
+
+/**
  * Remove authorization token from localStorage
  */
 function removeAuthToken(): void {
   localStorage.removeItem('auth_token');
+  localStorage.removeItem('refresh_token');
 }
 
 /**
@@ -70,11 +85,23 @@ async function request<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const token = getAuthToken();
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
+
+  // Handle mock tokens for development - skip actual API calls
+  if (token && token.startsWith('mock_token_')) {
+    // For development, skip authentication for mock tokens
+    // This allows the app to work without a backend
+    console.log(`[MOCK API] ${options.method || 'GET'} ${endpoint} - Mock response`);
+    return {
+      success: true,
+      data: {} as T,
+      message: 'Mock response'
+    };
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -203,6 +230,45 @@ export const authApi = {
       removeAuthToken();
     }
   },
+
+  /**
+   * Refresh access token
+   */
+  async refresh() {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new ApiError('No refresh token available', 'NO_REFRESH_TOKEN', 401);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new ApiError(
+        data.error?.message || 'Refresh failed',
+        data.error?.code || 'REFRESH_ERROR',
+        response.status
+      );
+    }
+
+    // Save new tokens
+    if (data.token) {
+      saveAuthToken(data.token);
+    }
+    if (data.refreshToken) {
+      saveRefreshToken(data.refreshToken);
+    }
+
+    return data;
+  },
 };
 
 /**
@@ -233,12 +299,12 @@ export const casesApi = {
     return request(endpoint);
   },
 
-  /**
-   * Get case by ID
-   */
-  async getCaseById(id: string) {
-    return request(`/cases/${id}`);
-  },
+/**
+ * Get case by ID (with proper encoding for IDs containing slashes)
+ */
+async getCaseById(id: string) {
+  return request(`/cases/${encodeURIComponent(id)}`);
+},
 
   /**
    * Create new case
@@ -271,7 +337,7 @@ export const casesApi = {
     description: string;
     nextHearing: string;
   }>) {
-    return request(`/cases/${id}`, {
+    return request(`/cases/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
@@ -281,8 +347,27 @@ export const casesApi = {
    * Delete case
    */
   async deleteCase(id: string) {
-    return request(`/cases/${id}`, {
+    return request(`/cases/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+    });
+  },
+
+  /**
+   * Assign lawyer to case
+   */
+  async assignLawyerToCase(caseId: string, lawyerId: string) {
+    return request(`/cases/${encodeURIComponent(caseId)}/assign-lawyer`, {
+      method: 'PUT',
+      body: JSON.stringify({ lawyerId }),
+    });
+  },
+
+  /**
+   * Request case assignment (lawyers only)
+   */
+  async requestCaseAssignment(caseId: string) {
+    return request(`/cases/${encodeURIComponent(caseId)}/request-assignment`, {
+      method: 'POST',
     });
   },
 };
@@ -381,6 +466,13 @@ export const usersApi = {
   },
 
   /**
+   * Get current user profile
+   */
+  async getProfile() {
+    return request('/users/profile');
+  },
+
+  /**
    * Get user by ID
    */
   async getUserById(id: string) {
@@ -434,6 +526,16 @@ export const usersApi = {
       method: 'DELETE',
     });
   },
+
+  /**
+   * Assign lawyer to case
+   */
+  async assignLawyerToCase(caseId: string, lawyerId: string) {
+    return request(`/cases/${caseId}/assign-lawyer`, {
+      method: 'PUT',
+      body: JSON.stringify({ lawyerId }),
+    });
+  },
 };
 
 /**
@@ -468,4 +570,4 @@ export const reportsApi = {
   },
 };
 
-export { ApiError, getAuthToken, removeAuthToken };
+export { ApiError, getAuthToken, removeAuthToken, saveRefreshToken };

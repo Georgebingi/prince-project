@@ -14,7 +14,8 @@ export function Input({
   type = 'text',
   ...props
 }: InputProps) {
-  const inputId = id || useId();
+  const generatedId = useId();
+  const inputId = id || generatedId;
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
   const inputType = isPassword ? showPassword ? 'text' : 'password' : type;

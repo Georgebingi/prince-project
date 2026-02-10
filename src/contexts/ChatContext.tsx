@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState, createContext, useContext } from 'react';
+import { useEffect, useMemo, useState, createContext, useContext, type ReactNode } from 'react';
+
 import { useAuth } from './AuthContext';
 import { useStaff } from './StaffContext';
 export interface ChatMessage {
@@ -79,7 +80,8 @@ export function ChatProvider({
       const otherUserId = isOutgoing ? msg.receiverId : msg.senderId;
       const otherUserName = isOutgoing ? msg.receiverName : msg.senderName;
       // Find user role from staff list
-      const staffMember = staff.find(s => s.staffId === otherUserId);
+      const staffMember = staff.find(s => s.id === otherUserId);
+
       const userRole = staffMember?.role || 'Unknown';
       if (!conversationMap.has(otherUserId)) {
         conversationMap.set(otherUserId, {
@@ -91,13 +93,15 @@ export function ChatProvider({
           unreadCount: 0
         });
       }
-      const conv = conversationMap.get(otherUserId)!;
-      if (new Date(msg.timestamp) > new Date(conv.lastMessageTime)) {
-        conv.lastMessage = msg.message;
-        conv.lastMessageTime = msg.timestamp;
-      }
-      if (msg.receiverId === user.staffId && !msg.read) {
-        conv.unreadCount++;
+      const conv = conversationMap.get(otherUserId);
+      if (conv) {
+        if (new Date(msg.timestamp) > new Date(conv.lastMessageTime)) {
+          conv.lastMessage = msg.message;
+          conv.lastMessageTime = msg.timestamp;
+        }
+        if (msg.receiverId === user.staffId && !msg.read) {
+          conv.unreadCount++;
+        }
       }
     });
     return Array.from(conversationMap.values()).sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
@@ -117,7 +121,9 @@ export function ChatProvider({
       {children}
     </ChatContext.Provider>;
 }
+// eslint-disable-next-line react-refresh/only-export-components
 export function useChat() {
+
   const context = useContext(ChatContext);
   if (!context) {
     throw new Error('useChat must be used within ChatProvider');

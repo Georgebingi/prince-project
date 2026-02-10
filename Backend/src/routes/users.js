@@ -7,6 +7,72 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticateToken);
 
+// GET /api/users/profile - Get current user profile
+router.get('/profile', async (req, res) => {
+  try {
+    const [users] = await db.query(
+      'SELECT id, name, email, role, staff_id, department FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'User not found'
+        }
+      });
+    }
+
+    const user = users[0];
+    res.json({
+      success: true,
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        staffId: user.staff_id
+      }
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// GET /api/users/lawyers - Get all lawyers (judge, registrar, admin, court_admin only)
+router.get('/lawyers', authorizeRole('judge', 'registrar', 'admin', 'court_admin'), async (req, res) => {
+  try {
+    const [lawyers] = await db.query(
+      'SELECT id, name, email, staff_id, department FROM users WHERE role = ? AND status = ?',
+      ['lawyer', 'active']
+    );
+
+    res.json({
+      success: true,
+      data: lawyers
+    });
+  } catch (error) {
+    console.error('Get lawyers error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
 // GET /api/users - Get all users (admin only)
 router.get('/', authorizeRole('admin', 'registrar'), async (req, res) => {
   try {
@@ -57,6 +123,58 @@ router.get('/', authorizeRole('admin', 'registrar'), async (req, res) => {
     });
   } catch (error) {
     console.error('Get users error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// GET /api/users/lawyers - Get list of lawyers (judges and admins can access)
+router.get('/lawyers', authorizeRole('judge', 'admin', 'registrar', 'court_admin'), async (req, res) => {
+  try {
+    const [lawyers] = await db.query(
+      `SELECT id, name, email, staff_id, department
+       FROM users
+       WHERE role = 'lawyer' AND status = 'active'
+       ORDER BY name`
+    );
+
+    res.json({
+      success: true,
+      data: lawyers
+    });
+  } catch (error) {
+    console.error('Get lawyers error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// GET /api/users/judges - Get list of judges
+router.get('/judges', async (req, res) => {
+  try {
+    const [judges] = await db.query(
+      `SELECT id, name, email, staff_id, department
+       FROM users
+       WHERE role = 'judge' AND status = 'active'
+       ORDER BY name`
+    );
+
+    res.json({
+      success: true,
+      data: judges
+    });
+  } catch (error) {
+    console.error('Get judges error:', error);
     res.status(500).json({
       success: false,
       error: {
@@ -199,7 +317,7 @@ router.post('/:id/approve', authorizeRole('admin', 'registrar'), async (req, res
     // Log action
     try {
       await db.query(
-        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address) 
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [req.user.id, req.user.name, 'approve', 'user', id, req.ip]
       );
@@ -213,58 +331,6 @@ router.post('/:id/approve', authorizeRole('admin', 'registrar'), async (req, res
     });
   } catch (error) {
     console.error('Approve user error:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Internal server error'
-      }
-    });
-  }
-});
-
-// GET /api/users/lawyers - Get list of lawyers
-router.get('/lawyers', async (req, res) => {
-  try {
-    const [lawyers] = await db.query(
-      `SELECT id, name, email, staff_id, department 
-       FROM users 
-       WHERE role = 'lawyer' AND status = 'active' 
-       ORDER BY name`
-    );
-
-    res.json({
-      success: true,
-      data: lawyers
-    });
-  } catch (error) {
-    console.error('Get lawyers error:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Internal server error'
-      }
-    });
-  }
-});
-
-// GET /api/users/judges - Get list of judges
-router.get('/judges', async (req, res) => {
-  try {
-    const [judges] = await db.query(
-      `SELECT id, name, email, staff_id, department
-       FROM users
-       WHERE role = 'judge' AND status = 'active'
-       ORDER BY name`
-    );
-
-    res.json({
-      success: true,
-      data: judges
-    });
-  } catch (error) {
-    console.error('Get judges error:', error);
     res.status(500).json({
       success: false,
       error: {

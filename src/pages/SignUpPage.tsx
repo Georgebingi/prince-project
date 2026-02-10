@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-import { User, Lock, Mail, Phone, Shield, Building, ArrowLeft, Code2 } from 'lucide-react';
+import { User, Lock, Mail, Phone, ArrowLeft, Code2 } from 'lucide-react';
 import { authApi, ApiError } from '../services/api';
 export function SignUpPage() {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ export function SignUpPage() {
     setIsLoading(true);
     try {
       const response = await authApi.register({
-        fullName: formData.fullName,
+        name: formData.fullName,
         email: formData.email,
         phone: formData.phone || undefined,
         staffId: formData.staffId || formData.email,

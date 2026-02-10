@@ -65,7 +65,8 @@ interface CasesContextType {
   refresh: () => Promise<void>;
   addCase: (newCase: Omit<Case, 'id' | 'filed' | 'updated'>) => Promise<void>;
   updateCase: (id: string, updates: Partial<Case>) => void;
-  deleteCase: (id: string) => void;
+  deleteCase: (id: string) => Promise<void>;
+
   getCaseById: (id: string) => Case | undefined;
   addDocumentToCase: (caseId: string, document: CaseDocument) => void;
   addNoteToCase: (caseId: string, note: string) => void;
@@ -90,6 +91,7 @@ const INITIAL_CASES: Case[] = [{
   color: 'bg-red-600',
   pages: 142,
   judge: 'Hon. Justice Ibrahim',
+  lawyer: 'Barrister Musa',
   court: 'High Court 1',
   filed: '2023-12-10',
   updated: '2 days ago',
@@ -129,6 +131,7 @@ const INITIAL_CASES: Case[] = [{
   color: 'bg-purple-600',
   pages: 215,
   judge: 'Hon. Justice Sani',
+  lawyer: 'Barrister Musa',
   court: 'High Court 2',
   filed: '2023-11-20',
   updated: '1 week ago',
@@ -177,6 +180,7 @@ const INITIAL_CASES: Case[] = [{
   color: 'bg-teal-600',
   pages: 45,
   judge: 'Hon. Justice Ibrahim',
+  lawyer: 'Barrister Musa',
   court: 'High Court 1',
   filed: '2024-01-10',
   updated: '4 days ago',
@@ -286,6 +290,7 @@ function mapBackendCaseToFrontend(row: {
   next_hearing?: string | null;
   filed_date?: string;
   judge_name?: string | null;
+  lawyer_name?: string | null;
   court?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -304,6 +309,7 @@ function mapBackendCaseToFrontend(row: {
     color: TYPE_COLORS[row.type ?? ''] ?? 'bg-slate-600',
     pages: row.documents?.length ?? 0,
     judge: row.judge_name ?? undefined,
+    lawyer: row.lawyer_name ?? undefined,
     court: row.court ?? undefined,
     filed: formatDate(row.filed_date) ?? '',
     updated: row.updated_at ? new Date(row.updated_at).toLocaleDateString() : '',
@@ -354,8 +360,16 @@ export function CasesProvider({
         const mapped = (res.data as unknown[]).map((row: unknown) =>
           mapBackendCaseToFrontend(row as Parameters<typeof mapBackendCaseToFrontend>[0])
         );
-        setCases(mapped);
-        localStorage.setItem('court_cases', JSON.stringify(mapped));
+        // Merge with local cases to keep locally created cases that may not be in backend yet
+        const localCases = JSON.parse(localStorage.getItem('court_cases') || '[]');
+        const merged = [...mapped];
+        for (const localCase of localCases) {
+          if (!mapped.some(m => m.id === localCase.id)) {
+            merged.push(localCase);
+          }
+        }
+        setCases(merged);
+        localStorage.setItem('court_cases', JSON.stringify(merged));
       }
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Failed to load cases';
@@ -389,6 +403,27 @@ export function CasesProvider({
       hearingDate === 'TBD' || !hearingDate
         ? undefined
         : new Date(hearingDate).toISOString().split('T')[0];
+
+    // Generate a case ID
+    const year = new Date().getFullYear();
+    const caseNumber = `KDH/${year}/${String(cases.length + 1).padStart(3, '0')}`;
+
+    const caseToAdd: Case = {
+      ...newCase,
+      id: caseNumber,
+      filed: new Date().toISOString().split('T')[0],
+      updated: 'Just now',
+      documents: [],
+      notes: [],
+      daysLeft: calculateDaysLeft(hearingDate),
+      pages: 0
+    };
+
+    // Add to local state immediately for instant UI update
+    setCases(prev => [...prev, caseToAdd]);
+    localStorage.setItem('court_cases', JSON.stringify([...cases, caseToAdd]));
+
+    // Try to create in backend (don't block UI if it fails)
     try {
       await casesApi.createCase({
         title: newCase.title,
@@ -398,10 +433,11 @@ export function CasesProvider({
         nextHearing: nextHearingISO,
         parties: []
       });
+      // If backend create succeeds, refresh to sync
       await refresh();
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Failed to create case';
-      throw new Error(message);
+      console.warn('Backend create failed, case added locally only:', err);
+      // Keep the local case, don't throw error to not block UI
     }
   };
   const updateCase = (id: string, updates: Partial<Case>) => {
@@ -413,9 +449,17 @@ export function CasesProvider({
       daysLeft: updates.nextHearing ? calculateDaysLeft(updates.nextHearing) : c.daysLeft
     } : c));
   };
-  const deleteCase = (id: string) => {
-    setCases(cases.filter(c => c.id !== id));
+  const deleteCase = async (id: string) => {
+    try {
+      await casesApi.deleteCase(id);
+      // Refresh cases from server to ensure consistency
+      await refresh();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to delete case';
+      throw new Error(message);
+    }
   };
+
   const getCaseById = (id: string) => {
     return cases.find(c => c.id === id);
   };
@@ -491,12 +535,15 @@ export function CasesProvider({
       updated: 'Just now'
     } : c));
   };
-  const assignCaseToLawyer = (caseId: string, lawyer: string) => {
-    setCases(cases.map(c => c.id === caseId ? {
-      ...c,
-      lawyer,
-      updated: 'Just now'
-    } : c));
+  const assignCaseToLawyer = async (caseId: string, lawyer: string) => {
+    try {
+      await casesApi.assignLawyerToCase(caseId, lawyer);
+      // Refresh cases from server to ensure consistency
+      await refresh();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to assign lawyer';
+      throw new Error(message);
+    }
   };
   return (
     <CasesContext.Provider
@@ -527,7 +574,9 @@ export function CasesProvider({
     </CasesContext.Provider>
   );
 }
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCases() {
+
   const context = useContext(CasesContext);
   if (!context) {
     throw new Error('useCases must be used within CasesProvider');
