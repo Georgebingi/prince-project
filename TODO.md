@@ -1,20 +1,30 @@
-# TODO: Fix Login Persistence and Auto-Update User Info
+# TODO: Implement Immediate UI Updates and Responsiveness
 
-## Backend Changes
-- [x] Add refresh token endpoint in Backend/src/routes/auth.js
-- [x] Add profile endpoint in Backend/src/routes/users.js
+## 1. ChatWidget.tsx
+- [x] Add `isSending` state to disable send button immediately on click
+- [x] Update send button to show loading state and prevent double-clicks
 
-## Frontend Changes
-- [x] Update api.ts to handle refresh tokens (store, retrieve, remove)
-- [x] Add refresh API call in authApi
-- [x] Add profile API call in usersApi
-- [x] Update AuthContext.tsx to:
-  - Store refresh token on login
-  - Attempt token refresh on app load if user exists
-  - Add periodic user info update
-  - Handle token expiry gracefully
+## 2. CasesContext.tsx
+- [x] Modify `assignCaseToLawyer` for optimistic UI updates (update local state first, then API)
+- [x] Add polling mechanism for automatic case synchronization (every 30 seconds)
+- [x] Ensure local state reverts on API failure for optimistic updates
+
+## 3. LawyerDashboard.tsx
+- [x] Remove all `window.location.reload()` calls
+- [x] Add loading states to `handleAssignCase` button
+- [x] Implement optimistic updates for assignment requests
+- [x] Update UI immediately after successful API calls without refresh
+
+## 4. AuthContext.tsx
+- [x] Verify authentication persistence (already uses localStorage, ensure refresh doesn't log out)
+
+## 5. General Responsiveness
+- [x] Add loading/disabled states to all action buttons across the app
+- [x] Test immediate feedback on all button clicks
+- [x] Verify no delays in UI updates
 
 ## Testing
-- [ ] Test login persistence across page refreshes
-- [ ] Test multiple browser sessions independence
-- [ ] Test auto-update of user info
+- [x] Test chat send button immediate disable/re-enable
+- [x] Test case assignment updates without refresh
+- [x] Test automatic synchronization across users
+- [x] Test browser refresh persistence

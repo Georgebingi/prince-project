@@ -62,6 +62,7 @@ interface CasesContextType {
   orders: Order[];
   isLoading: boolean;
   error: string | null;
+  lastSync: number;
   refresh: () => Promise<void>;
   addCase: (newCase: Omit<Case, 'id' | 'filed' | 'updated'>) => Promise<void>;
   updateCase: (id: string, updates: Partial<Case>) => void;
@@ -345,6 +346,7 @@ export function CasesProvider({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<number>(Date.now());
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -383,6 +385,22 @@ export function CasesProvider({
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Auto-sync cases every 30 seconds
+  useEffect(() => {
+    const syncInterval = setInterval(async () => {
+      if (user) {
+        try {
+          await refresh();
+          setLastSync(Date.now());
+        } catch (err) {
+          console.warn('Auto-sync failed:', err);
+        }
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [user, refresh]);
 
   useEffect(() => {
     localStorage.setItem('court_cases', JSON.stringify(cases));
@@ -536,11 +554,22 @@ export function CasesProvider({
     } : c));
   };
   const assignCaseToLawyer = async (caseId: string, lawyer: string) => {
+    // Optimistic update: Update local state immediately for instant UI feedback
+    const originalCase = cases.find(c => c.id === caseId);
+    if (originalCase) {
+      setCases(prev => prev.map(c => c.id === caseId ? { ...c, lawyer, updated: 'Just now' } : c));
+    }
+
     try {
       await casesApi.assignLawyerToCase(caseId, lawyer);
       // Refresh cases from server to ensure consistency
       await refresh();
+      setLastSync(Date.now());
     } catch (err) {
+      // Revert optimistic update on failure
+      if (originalCase) {
+        setCases(prev => prev.map(c => c.id === caseId ? originalCase : c));
+      }
       const message = err instanceof ApiError ? err.message : 'Failed to assign lawyer';
       throw new Error(message);
     }
@@ -553,6 +582,7 @@ export function CasesProvider({
         orders,
         isLoading,
         error,
+        lastSync,
         refresh,
         addCase,
         updateCase,

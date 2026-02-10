@@ -12,16 +12,16 @@ import {
   Search,
   MessageSquare,
 } from 'lucide-react';
-import { useCases } from '../../contexts/CasesContext';
+import { useCases, Case } from '../../contexts/CasesContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { casesApi } from '../../services/api';
 export function LawyerDashboard() {
   const navigate = useNavigate();
-  const { cases } = useCases();
+  const { cases, refresh } = useCases();
   const { user } = useAuth();
   // Filter cases assigned to the current lawyer
   const lawyerName = user?.name || 'Barrister Musa';
-  const myCases = cases.filter((c) => {
+  const myCases = cases.filter((c: Case) => {
     // Check if case is assigned to this lawyer
     if (c.lawyer === lawyerName) return true;
     if (c.lawyer === 'Barr. Musa' && lawyerName === 'Barrister Musa') return true;
@@ -29,7 +29,7 @@ export function LawyerDashboard() {
 
     return false;
   });
-  const activeCases = myCases.slice(0, 5).map((c) => ({
+  const activeCases = myCases.slice(0, 5).map((c: Case) => ({
     id: c.id,
     title: c.title,
     status: c.status,
@@ -42,8 +42,8 @@ export function LawyerDashboard() {
       const response = await casesApi.requestCaseAssignment(caseId);
       if (response.success) {
         alert('Assignment request submitted successfully. A judge will review your request.');
-        // Refresh cases to update the UI
-        window.location.reload();
+        // Refresh cases to update the UI immediately
+        await refresh();
       } else {
         alert('Failed to submit assignment request. Please try again.');
       }
@@ -51,14 +51,14 @@ export function LawyerDashboard() {
       console.error('Assignment request error:', error);
       if (error.code === 'ALREADY_ASSIGNED') {
         alert('This case is already assigned to a lawyer.');
-        // Refresh cases to update the UI
-        window.location.reload();
+        // Refresh cases to update the UI immediately
+        await refresh();
       } else if (error.code === 'REQUEST_EXISTS') {
         alert('You already have a pending assignment request for this case.');
       } else if (error.status === 400) {
         alert('Unable to request assignment for this case. It may already be assigned.');
-        // Refresh cases to update the UI
-        window.location.reload();
+        // Refresh cases to update the UI immediately
+        await refresh();
       } else {
         alert('Failed to submit assignment request. Please check your connection and try again.');
       }

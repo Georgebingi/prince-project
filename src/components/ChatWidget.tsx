@@ -28,6 +28,7 @@ export function ChatWidget() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const unreadCount = getUnreadCount();
   // Get selected user details directly from staff list
@@ -49,19 +50,25 @@ export function ChatWidget() {
     setSearchQuery('');
     markAsRead(staffMember.id);
   };
-  const handleSendMessage = () => {
-    if (!messageText.trim() || !selectedUserId) return;
-    if (selectedUser) {
-      sendMessage(selectedUserId, selectedUser.name, messageText);
-      // Send notification ONLY to the recipient
-      addSystemNotification({
-        title: `New message from ${user?.name}`,
-        message: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''),
-        type: 'info',
-        createdBy: user?.name || 'Unknown',
-        recipientId: selectedUserId // Only show to the recipient
-      });
-      setMessageText('');
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !selectedUserId || isSending) return;
+
+    setIsSending(true);
+    try {
+      if (selectedUser) {
+        sendMessage(selectedUserId, selectedUser.name, messageText);
+        // Send notification ONLY to the recipient
+        addSystemNotification({
+          title: `New message from ${user?.name}`,
+          message: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''),
+          type: 'info',
+          createdBy: user?.name || 'Unknown',
+          recipientId: selectedUserId // Only show to the recipient
+        });
+        setMessageText('');
+      }
+    } finally {
+      setIsSending(false);
     }
   };
   const handleSelectConversation = (conv: (typeof conversations)[0]) => {
