@@ -6,7 +6,21 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
-import { FolderOpen, Calendar, FileText, UserPlus, CheckCircle, Search, Plus, } from 'lucide-react';
+import {
+  FolderOpen,
+  Calendar,
+  Clock,
+  FileText,
+  UserPlus,
+  CheckCircle,
+  AlertCircle,
+  Search,
+  Plus,
+  Scale,
+  Gavel,
+  BookOpen
+} from 'lucide-react';
+
 import { useCases } from '../../contexts/CasesContext';
 import { CreateCaseModal } from '../../components/CreateCaseModal';
 export function RegistrarDashboard() {
@@ -53,6 +67,31 @@ export function RegistrarDashboard() {
     new Date(a.nextHearing).getTime() - new Date(b.nextHearing).getTime()
   ).
   slice(0, 5);
+  // Judge's active cases - synced to registrar view
+  const judgeCases = useMemo(() => {
+    return cases.filter(
+      (c) =>
+      c.judge &&
+      c.judge !== 'Unassigned' &&
+      c.status !== 'Closed' &&
+      c.status !== 'Disposed'
+    );
+  }, [cases]);
+  const judgeStats = useMemo(() => {
+    const pendingJudgment = judgeCases.filter(
+      (c) => c.status === 'Pending Judgment'
+    ).length;
+    const inProgress = judgeCases.filter(
+      (c) => c.status === 'In Progress'
+    ).length;
+    const totalActive = judgeCases.length;
+    return {
+      pendingJudgment,
+      inProgress,
+      totalActive
+    };
+  }, [judgeCases]);
+
   const handleAssignClick = (caseId: string) => {
     setSelectedCaseId(caseId);
     setShowAssignModal(true);
@@ -152,6 +191,41 @@ export function RegistrarDashboard() {
           </Card>
         </div>
 
+        {/* Judge's Cases Overview Banner */}
+        <Card className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white border-none shadow-xl overflow-hidden relative">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0aDR2NGgtNHpNMjAgMjBoNHY0aC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
+          <div className="flex items-center justify-between relative z-10 p-1">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 shadow-lg">
+                <Scale className="h-7 w-7 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg tracking-tight">
+                  Judge's Cases Overview
+                </h3>
+                <p className="text-slate-400 text-sm flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Live sync from judicial bench
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-8">
+              <div className="text-center px-4 py-2 bg-white/5 rounded-lg border border-white/10">
+                <p className="text-3xl font-bold text-white">{judgeStats.totalActive}</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Active Cases</p>
+              </div>
+              <div className="text-center px-4 py-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                <p className="text-3xl font-bold text-amber-400">{judgeStats.pendingJudgment}</p>
+                <p className="text-xs text-amber-400/70 uppercase tracking-wider font-medium">Pending Judgment</p>
+              </div>
+              <div className="text-center px-4 py-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <p className="text-3xl font-bold text-blue-400">{judgeStats.inProgress}</p>
+                <p className="text-xs text-blue-400/70 uppercase tracking-wider font-medium">In Progress</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-6">
@@ -227,11 +301,94 @@ export function RegistrarDashboard() {
                       </Button>
                     </div>) : <div className="text-center py-8 text-slate-500">
                     <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500 opacity-50" />
-                    <p>No pending registrations.</p>
+                <p>No pending registrations.</p>
                   </div>}
               </div>
             </Card>
+
+            {/* Judge's Active Cases - Synced */}
+            <Card className="overflow-hidden border-slate-200 shadow-sm">
+              <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 rounded-lg">
+                      <Gavel className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">
+                        Judge's Active Cases
+                      </h3>
+                      <p className="text-sm text-slate-500 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Real-time judicial bench data
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/cases')}>
+                    View All
+                  </Button>
+
+                </div>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {judgeCases.slice(0, 5).map((c) =>
+                <div
+                  key={c.id}
+                  className="p-4 hover:bg-slate-50/80 transition-all duration-200 cursor-pointer flex items-center justify-between group"
+                  onClick={() =>
+                  navigate(`/cases/${encodeURIComponent(c.id)}`)
+                  }>
+
+                    <div className="flex items-center gap-4">
+                      <div className={`w-1.5 h-12 rounded-full ${c.color} shadow-sm`}></div>
+                      <div>
+                        <p className="font-semibold text-slate-900 text-sm group-hover:text-indigo-700 transition-colors">
+                          {c.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                            {c.id}
+                          </span>
+                          <span className="text-xs text-slate-400">•</span>
+                          <span className="text-xs text-slate-600 flex items-center gap-1">
+                            <BookOpen className="h-3 w-3" />
+                            {c.judge}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                      variant={
+                      c.status === 'Pending Judgment' ?
+                      'danger' :
+                      c.status === 'In Progress' ?
+                      'warning' :
+                      'secondary'
+                      }
+                      className="text-[10px] font-semibold px-2.5 py-1 shadow-sm">
+
+                        {c.status}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                        <Clock className="h-3 w-3" />
+                        <span className={c.daysLeft <= 3 ? 'text-red-600 font-semibold' : ''}>
+                          {c.daysLeft}d
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {judgeCases.length === 0 && (
+                  <div className="p-8 text-center text-slate-500">
+                    <AlertCircle className="h-10 w-10 mx-auto mb-3 text-slate-300" />
+                    <p className="text-sm">No active judge cases found.</p>
+                  </div>
+                )}
+              </div>
+            </Card>
           </div>
+
 
           {/* Sidebar Column */}
           <div className="lg:col-span-1 space-y-6">
@@ -267,9 +424,10 @@ export function RegistrarDashboard() {
                       </div>
                     </div>
                   </div>)}
-                <Button variant="outline" className="w-full mt-2" size="sm">
+                <Button variant="outline" className="w-full mt-2" size="sm" onClick={() => navigate('/calendar')}>
                   View Calendar
                 </Button>
+
               </div>
             </Card>
 

@@ -5,11 +5,14 @@ export interface SystemNotification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'maintenance' | 'success';
+  type: 'info' | 'warning' | 'maintenance' | 'success' | 'chat';
   createdAt: string;
   createdBy: string;
   recipientId?: string; // Optional field for targeted notifications
+  senderId?: string; // For chat notifications
+  senderName?: string; // For chat notifications
 }
+
 interface SystemSettings {
   maintenanceMode: boolean;
   maintenanceDuration: number; // in minutes
@@ -21,9 +24,11 @@ interface SystemContextType {
   notifications: SystemNotification[];
   toggleMaintenanceMode: (duration?: number) => void;
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'createdAt'>) => void;
+  addChatNotification: (senderId: string, senderName: string, message: string) => void;
   clearNotification: (id: string) => void;
   isMaintenanceActive: () => boolean;
 }
+
 const SystemContext = createContext<SystemContextType | undefined>(undefined);
 const INITIAL_SETTINGS: SystemSettings = {
   maintenanceMode: false,
@@ -99,6 +104,24 @@ export function SystemProvider({
     };
     setNotifications(prev => [newNotification, ...prev]);
   };
+
+  const addChatNotification = (senderId: string, senderName: string, message: string) => {
+    if (!user) return;
+    
+    const newNotification: SystemNotification = {
+      id: `chat-notif-${Date.now()}`,
+      title: `New message from ${senderName}`,
+      message: message.length > 50 ? `${message.substring(0, 50)}...` : message,
+      type: 'chat',
+      createdAt: new Date().toISOString(),
+      createdBy: senderId,
+      recipientId: user.staffId,
+      senderId,
+      senderName
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
   const clearNotification = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
@@ -116,9 +139,11 @@ export function SystemProvider({
     notifications: filteredNotifications,
     toggleMaintenanceMode,
     addSystemNotification,
+    addChatNotification,
     clearNotification,
     isMaintenanceActive
   }}>
+
       {children}
     </SystemContext.Provider>;
 }

@@ -109,7 +109,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 // GET /api/documents - Get all documents with filters
 router.get('/', async (req, res) => {
   try {
-    const { caseId, type, status, page = 1, limit = 20 } = req.query;
+    const { caseId, type, status, page = 1, limit = 20, lawyerId } = req.query;
     const offset = (page - 1) * limit;
 
     let query = `
@@ -121,19 +121,29 @@ router.get('/', async (req, res) => {
     `;
     const params = [];
 
+    // Filter by case ID
     if (caseId) {
       query += ' AND d.case_id = ?';
       params.push(caseId);
     }
 
+    // Filter by document type
     if (type) {
       query += ' AND d.type = ?';
       params.push(type);
     }
 
+    // Filter by status
     if (status) {
       query += ' AND d.status = ?';
       params.push(status);
+    }
+
+    // Filter by lawyer - get documents for cases assigned to this lawyer
+    // OR documents uploaded by this lawyer
+    if (lawyerId) {
+      query += ' AND (c.lawyer_id = ? OR d.uploaded_by = ?)';
+      params.push(lawyerId, lawyerId);
     }
 
     // Get total count

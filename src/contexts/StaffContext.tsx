@@ -27,9 +27,18 @@ interface StaffContextType {
     department?: string;
     password: string;
   }) => Promise<void>;
+  updateStaff: (id: string, updates: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    department?: string;
+    role?: string;
+  }) => Promise<void>;
   deleteStaff: (id: string) => Promise<void>;
   approveStaff: (id: string, staffId?: string) => Promise<void>;
+  toggleStaffStatus: (id: string, status: 'active' | 'suspended' | 'pending' | 'rejected') => Promise<void>;
 }
+
 
 const StaffContext = createContext<StaffContextType | undefined>(undefined);
 
@@ -53,6 +62,7 @@ const mapUserToStaff = (user: {
   lastActive: user.updated_at,
   joinedDate: user.created_at,
 });
+
 
 export function StaffProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -222,6 +232,65 @@ const approveStaff = async (id: string, staffId?: string) => {
   }
 };
 
+const updateStaff = async (id: string, updates: {
+  name?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  role?: string;
+}) => {
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    const response = await usersApi.updateUser(id, updates);
+
+    if (!response.success) {
+      throw new Error(response.error?.message || 'Failed to update user');
+    }
+
+    await refresh();
+  } catch (err) {
+    const message =
+      err instanceof ApiError
+        ? err.message
+        : err instanceof Error
+        ? err.message
+        : 'Failed to update staff';
+
+    setError(message);
+    throw err;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const toggleStaffStatus = async (id: string, status: 'active' | 'suspended' | 'pending' | 'rejected') => {
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    const response = await usersApi.updateUserStatus(id, status);
+
+    if (!response.success) {
+      throw new Error(response.error?.message || 'Failed to update user status');
+    }
+
+    await refresh();
+  } catch (err) {
+    const message =
+      err instanceof ApiError
+        ? err.message
+        : err instanceof Error
+        ? err.message
+        : 'Failed to update staff status';
+
+    setError(message);
+    throw err;
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <StaffContext.Provider
@@ -231,14 +300,17 @@ const approveStaff = async (id: string, staffId?: string) => {
         error,
         refresh,
         addStaff,
+        updateStaff,
         deleteStaff,
         approveStaff,
+        toggleStaffStatus,
       }}
     >
       {children}
     </StaffContext.Provider>
   );
 }
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useStaff() {

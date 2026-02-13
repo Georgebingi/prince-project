@@ -27,6 +27,12 @@ interface ApiResponse<T> {
     department?: string;
   };
   message?: string;
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 class ApiError extends Error {
@@ -362,12 +368,41 @@ async getCaseById(id: string) {
     });
   },
 
-  /**
+/**
    * Request case assignment (lawyers only)
    */
   async requestCaseAssignment(caseId: string) {
     return request(`/cases/${encodeURIComponent(caseId)}/request-assignment`, {
       method: 'POST',
+    });
+  },
+
+  /**
+   * Assign case to court (judge + court)
+   */
+  async assignCaseToCourt(caseId: string, court: string, judgeId: string) {
+    return request(`/cases/${encodeURIComponent(caseId)}/assign-court`, {
+      method: 'PUT',
+      body: JSON.stringify({ court, judgeId }),
+    });
+  },
+
+  /**
+   * Schedule hearing (update next_hearing)
+   */
+  async scheduleHearing(caseId: string, hearingDate: string) {
+    return request(`/cases/${encodeURIComponent(caseId)}/schedule-hearing`, {
+      method: 'PUT',
+      body: JSON.stringify({ hearingDate }),
+    });
+  },
+
+  /**
+   * Approve case registration (update status)
+   */
+  async approveCaseRegistration(caseId: string) {
+    return request(`/cases/${encodeURIComponent(caseId)}/approve`, {
+      method: 'PUT',
     });
   },
 };
@@ -385,6 +420,7 @@ export const documentsApi = {
     status?: string;
     page?: number;
     limit?: number;
+    lawyerId?: string;
   }) {
     const queryParams = new URLSearchParams();
     if (params) {
@@ -487,6 +523,7 @@ export const usersApi = {
     email?: string;
     phone?: string;
     department?: string;
+    role?: string;
   }) {
     return request(`/users/${id}`, {
       method: 'PUT',
@@ -503,6 +540,17 @@ export const usersApi = {
       body: JSON.stringify({ approved: true, staffId }),
     });
   },
+
+  /**
+   * Update user status (active, suspended, pending, rejected)
+   */
+  async updateUserStatus(id: string, status: 'active' | 'suspended' | 'pending' | 'rejected') {
+    return request(`/users/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+
 
   /**
    * Get list of lawyers
@@ -567,6 +615,411 @@ export const reportsApi = {
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/reports/case-statistics?${queryString}` : '/reports/case-statistics';
     return request(endpoint);
+  },
+};
+
+/**
+ * Audit Logs API
+ */
+export const auditLogsApi = {
+  /**
+   * Get audit logs with filtering
+   */
+  async getAuditLogs(params?: {
+    user?: string;
+    action?: string;
+    resource?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/reports/audit-logs?${queryString}` : '/reports/audit-logs';
+    return request(endpoint);
+  },
+};
+
+
+/**
+ * Motions API
+ */
+export const motionsApi = {
+  /**
+   * Get all motions with filters
+   */
+  async getMotions(params?: {
+    status?: string;
+    caseId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/motions?${queryString}` : '/motions';
+    return request(endpoint);
+  },
+
+  /**
+   * Create new motion
+   */
+  async createMotion(motionData: {
+    caseId: string;
+    title: string;
+    description?: string;
+    documentUrl?: string;
+  }) {
+    return request('/motions', {
+      method: 'POST',
+      body: JSON.stringify(motionData),
+    });
+  },
+
+  /**
+   * Update motion status (Approve/Reject)
+   */
+  async updateMotionStatus(id: number, status: 'Approved' | 'Rejected', notes?: string) {
+    return request(`/motions/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes }),
+    });
+  },
+
+  /**
+   * Get pending motions count for dashboard
+   */
+  async getPendingCount() {
+    return request('/motions/pending-count');
+  },
+};
+
+/**
+ * Orders API
+ */
+export const ordersApi = {
+  /**
+   * Get all orders with filters
+   */
+  async getOrders(params?: {
+    status?: string;
+    caseId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/orders?${queryString}` : '/orders';
+    return request(endpoint);
+  },
+
+  /**
+   * Create new order
+   */
+  async createOrder(orderData: {
+    caseId: string;
+    title: string;
+    content?: string;
+  }) {
+    return request('/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+  },
+
+  /**
+   * Sign an order
+   */
+  async signOrder(id: number) {
+    return request(`/orders/${id}/sign`, {
+      method: 'PUT',
+    });
+  },
+
+  /**
+   * Get draft orders count for dashboard
+   */
+  async getDraftCount() {
+    return request('/orders/draft-count');
+  },
+};
+
+/**
+ * Calendar API
+ */
+export const calendarApi = {
+
+  /**
+   * Get all scheduled hearings with optional filters
+   */
+  async getHearings(params?: {
+    startDate?: string;
+    endDate?: string;
+    court?: string;
+    judgeId?: string;
+    caseId?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/calendar/hearings?${queryString}` : '/calendar/hearings';
+    return request(endpoint);
+  },
+
+  /**
+   * Get hearings for a specific date
+   */
+  async getHearingsByDate(date: string) {
+    return request(`/calendar/hearings/${date}`);
+  },
+
+  /**
+   * Check court room availability
+   */
+  async getAvailability(date: string, court: string) {
+    return request(`/calendar/availability?date=${date}&court=${encodeURIComponent(court)}`);
+  },
+
+  /**
+   * Get calendar statistics
+   */
+  async getCalendarStats() {
+    return request('/calendar/stats');
+  },
+
+  /**
+   * Schedule a new hearing
+   */
+  async scheduleHearing(hearingData: {
+    caseId: string;
+    hearingDate: string;
+    hearingTime?: string;
+    court?: string;
+    notes?: string;
+  }) {
+    return request('/calendar/hearings', {
+      method: 'POST',
+      body: JSON.stringify(hearingData),
+    });
+  },
+};
+
+/**
+ * Notifications API
+ */
+export const notificationsApi = {
+
+  /**
+   * Get all notifications for the current user
+   */
+  async getNotifications(params?: {
+    page?: number;
+    limit?: number;
+    unreadOnly?: boolean;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/notifications?${queryString}` : '/notifications';
+    return request(endpoint);
+  },
+
+  /**
+   * Mark notification as read
+   */
+  async markAsRead(notificationId: string) {
+    return request(`/notifications/${notificationId}/read`, {
+      method: 'PUT',
+    });
+  },
+
+  /**
+   * Mark all notifications as read
+   */
+  async markAllAsRead() {
+    return request('/notifications/read-all', {
+      method: 'PUT',
+    });
+  },
+
+  /**
+   * Delete a notification
+   */
+  async deleteNotification(notificationId: string) {
+    return request(`/notifications/${notificationId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+/**
+ * Partners API
+ */
+export const partnersApi = {
+  /**
+   * Get all partner agencies with their connection status
+   */
+  async getPartners() {
+    return request('/partners');
+  },
+
+  /**
+   * Get specific partner details
+   */
+  async getPartnerById(id: number) {
+    return request(`/partners/${id}`);
+  },
+
+  /**
+   * Get network statistics
+   */
+  async getPartnerStats() {
+    return request('/partners/stats');
+  },
+
+  /**
+   * Get data exchange history
+   */
+  async getDataExchanges(params?: {
+    limit?: number;
+    offset?: number;
+    partnerId?: number;
+    status?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/partners/exchanges?${queryString}` : '/partners/exchanges';
+    return request(endpoint);
+  },
+
+  /**
+   * Initiate new data transfer
+   */
+  async createDataExchange(data: {
+    partnerId: number;
+    type: 'Warrant Request' | 'Prisoner Remand' | 'Evidence Transfer' | 'Case Data' | 'Judgment' | 'Other';
+    caseId?: number;
+    direction: 'outbound' | 'inbound';
+    dataPayload?: Record<string, unknown>;
+  }) {
+    return request('/partners/exchanges', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Update data exchange status
+   */
+  async updateExchangeStatus(id: number, status: 'Processing' | 'Completed' | 'Failed' | 'Cancelled', errorDetails?: string) {
+    return request(`/partners/exchanges/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, errorDetails }),
+    });
+  },
+
+  /**
+   * Update partner connection status
+   */
+  async updatePartnerStatus(id: number, status: 'Connected' | 'Disconnected' | 'Syncing' | 'Error', latency?: number, errorMessage?: string) {
+    return request(`/partners/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, latency, errorMessage }),
+    });
+  },
+
+  /**
+   * Trigger manual sync with partner
+   */
+  async triggerSync(id: number) {
+    return request(`/partners/${id}/sync`, {
+      method: 'POST',
+    });
+  },
+};
+
+/**
+ * Chat API
+ */
+export const chatApi = {
+  /**
+   * Get all conversations for the current user
+   */
+  async getConversations() {
+    return request('/chat/conversations');
+  },
+
+  /**
+   * Get messages with a specific user
+   */
+  async getMessages(userId: string) {
+    return request(`/chat/messages/${userId}`);
+  },
+
+  /**
+   * Send a message to a user
+   */
+  async sendMessage(receiverId: string, message: string) {
+    return request('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({ receiverId, message }),
+    });
+  },
+
+  /**
+   * Mark messages from a user as read
+   */
+  async markAsRead(userId: string) {
+    return request(`/chat/read/${userId}`, {
+      method: 'PUT',
+    });
+  },
+
+  /**
+   * Get total unread message count
+   */
+  async getUnreadCount() {
+    return request('/chat/unread-count');
   },
 };
 

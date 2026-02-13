@@ -169,4 +169,86 @@ router.get('/case-statistics', authorizeRole('admin', 'registrar', 'auditor'), a
   }
 });
 
+// GET /api/reports/audit-logs - Get audit logs with filtering
+router.get('/audit-logs', authorizeRole('admin', 'registrar', 'auditor'), async (req, res) => {
+  try {
+    const { user, action, resource, startDate, endDate, limit = 100, page = 1 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let query = `
+      SELECT 
+        al.id,
+        al.timestamp,
+        al.user_id,
+        al.user_name,
+        al.action,
+        al.resource,
+        al.resource_id,
+        al.ip_address,
+        al.user_agent,
+        al.details
+      FROM audit_logs al
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (user) {
+      query += ' AND (al.user_name LIKE ? OR al.user_id = ?)';
+      params.push(`%${user}%`, user);
+    }
+
+    if (action) {
+      query += ' AND al.action LIKE ?';
+      params.push(`%${action}%`);
+    }
+
+    if (resource) {
+      query += ' AND al.resource LIKE ?';
+      params.push(`%${resource}%`);
+    }
+
+    if (startDate && endDate) {
+      query += ' AND al.timestamp BETWEEN ? AND ?';
+      params.push(startDate, endDate);
+    } else if (startDate) {
+      query += ' AND al.timestamp >= ?';
+      params.push(startDate);
+    } else if (endDate) {
+      query += ' AND al.timestamp <= ?';
+      params.push(endDate);
+    }
+
+    // Get total count
+    const countQuery = query.replace('SELECT al.id, al.timestamp, al.user_id, al.user_name, al.action, al.resource, al.resource_id, al.ip_address, al.user_agent, al.details', 'SELECT COUNT(*) as total');
+    const [countResult] = await db.query(countQuery, params);
+    const total = countResult[0].total;
+
+    // Add pagination
+    query += ' ORDER BY al.timestamp DESC LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), offset);
+
+    const [logs] = await db.query(query, params);
+
+    res.json({
+      success: true,
+      data: logs,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Get audit logs error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
 export default router;

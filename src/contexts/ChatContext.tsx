@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, createContext, useContext, type ReactNode
 
 import { useAuth } from './AuthContext';
 import { useStaff } from './StaffContext';
+import { chatApi } from '../services/api';
+
 export interface ChatMessage {
   id: string;
   senderId: string;
@@ -25,9 +27,10 @@ interface ChatContextType {
   messages: ChatMessage[];
   sendMessage: (receiverId: string, receiverName: string, message: string) => void;
   markAsRead: (userId: string) => void;
-  getConversationMessages: (userId: string) => ChatMessage[];
+  getConversationMessages: (userId: string) => Promise<ChatMessage[]>;
   getUnreadCount: () => number;
 }
+
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({
   children
@@ -40,40 +43,134 @@ export function ChatProvider({
   const {
     staff
   } = useStaff();
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem('chat_messages');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Load conversations and unread count from API
   useEffect(() => {
-    localStorage.setItem('chat_messages', JSON.stringify(messages));
-  }, [messages]);
-  const sendMessage = (receiverId: string, receiverName: string, message: string) => {
     if (!user) return;
-    const newMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      senderId: user.staffId,
-      senderName: user.name,
-      receiverId,
-      receiverName,
-      message,
-      timestamp: new Date().toISOString(),
-      read: false
+
+    const loadChatData = async () => {
+      try {
+        const [conversationsRes, unreadRes] = await Promise.all([
+          chatApi.getConversations(),
+          chatApi.getUnreadCount()
+        ]);
+
+        if (conversationsRes.success && conversationsRes.data) {
+          setConversations(conversationsRes.data as ChatConversation[]);
+        }
+
+        if (unreadRes.success && unreadRes.data) {
+          setUnreadCount((unreadRes.data as { count: number }).count);
+        }
+      } catch (error) {
+        console.error('Failed to load chat data:', error);
+      }
     };
-    setMessages(prev => [...prev, newMessage]);
-  };
-  const markAsRead = (userId: string) => {
+
+    loadChatData();
+
+    // Poll for new messages every 30 seconds
+    const interval = setInterval(loadChatData, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const sendMessage = async (receiverId: string, receiverName: string, message: string) => {
     if (!user) return;
-    setMessages(prev => prev.map(msg => msg.senderId === userId && msg.receiverId === user.staffId && !msg.read ? {
-      ...msg,
-      read: true
-    } : msg));
+    
+    try {
+      const response = await chatApi.sendMessage(receiverId, message);
+      
+      if (response.success) {
+        // Optimistically add message to local state
+        const newMessage: ChatMessage = {
+          id: `msg-${Date.now()}`,
+          senderId: user.staffId,
+          senderName: user.name,
+          receiverId,
+          receiverName,
+          message,
+          timestamp: new Date().toISOString(),
+          read: false
+        };
+        setMessages(prev => [...prev, newMessage]);
+        
+        // Refresh conversations
+        const conversationsRes = await chatApi.getConversations();
+        if (conversationsRes.success && conversationsRes.data) {
+          setConversations(conversationsRes.data as ChatConversation[]);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
   };
-  const getConversationMessages = (userId: string): ChatMessage[] => {
+
+  const markAsRead = async (userId: string) => {
+    if (!user) return;
+    
+    try {
+      await chatApi.markAsRead(userId);
+      
+      // Update local state
+      setMessages(prev => prev.map(msg => msg.senderId === userId && msg.receiverId === user.staffId && !msg.read ? {
+        ...msg,
+        read: true
+      } : msg));
+      
+      // Refresh conversations and unread count
+      const [conversationsRes, unreadRes] = await Promise.all([
+        chatApi.getConversations(),
+        chatApi.getUnreadCount()
+      ]);
+      
+      if (conversationsRes.success && conversationsRes.data) {
+        setConversations(conversationsRes.data as ChatConversation[]);
+      }
+      
+      if (unreadRes.success && unreadRes.data) {
+        setUnreadCount((unreadRes.data as { count: number }).count);
+      }
+    } catch (error) {
+      console.error('Failed to mark messages as read:', error);
+    }
+  };
+
+  const getConversationMessages = async (userId: string): Promise<ChatMessage[]> => {
     if (!user) return [];
+    
+    try {
+      const response = await chatApi.getMessages(userId);
+      if (response.success && response.data) {
+        const apiMessages = response.data as ChatMessage[];
+        setMessages(prev => {
+          // Merge API messages with local state, avoiding duplicates
+          const existingIds = new Set(prev.map(m => m.id));
+          const newMessages = apiMessages.filter(m => !existingIds.has(m.id));
+          return [...prev, ...newMessages];
+        });
+        return apiMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+    
+    // Fallback to local messages
     return messages.filter(msg => msg.senderId === user.staffId && msg.receiverId === userId || msg.senderId === userId && msg.receiverId === user.staffId).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };
-  const conversations: ChatConversation[] = useMemo(() => {
+
+  // Use API-loaded conversations, fallback to computed from messages
+  const computedConversations: ChatConversation[] = useMemo(() => {
     if (!user) return [];
+    
+    // If we have API-loaded conversations, use those
+    if (conversations.length > 0) {
+      return conversations;
+    }
+    
+    // Fallback: compute from local messages
     const conversationMap = new Map<string, ChatConversation>();
     messages.forEach(msg => {
       const isOutgoing = msg.senderId === user.staffId;
@@ -105,19 +202,22 @@ export function ChatProvider({
       }
     });
     return Array.from(conversationMap.values()).sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
-  }, [messages, user, staff]);
+  }, [messages, user, staff, conversations]);
+
   const getUnreadCount = (): number => {
     if (!user) return 0;
-    return messages.filter(msg => msg.receiverId === user.staffId && !msg.read).length;
+    return unreadCount;
   };
+
   return <ChatContext.Provider value={{
-    conversations,
+    conversations: computedConversations,
     messages,
     sendMessage,
     markAsRead,
     getConversationMessages,
     getUnreadCount
   }}>
+
       {children}
     </ChatContext.Provider>;
 }

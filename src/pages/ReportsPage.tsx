@@ -4,6 +4,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { BarChart3, TrendingUp, Download, Calendar, FileText } from 'lucide-react';
 import { useCases } from '../contexts/CasesContext';
+import './ReportsPage.css';
 export function ReportsPage() {
   const {
     cases
@@ -11,11 +12,16 @@ export function ReportsPage() {
   // Calculate dynamic statistics
   const stats = useMemo(() => {
     const totalCases = cases.length;
-    const disposedCases = cases.filter(c => c.status.toLowerCase().includes('disposed')).length;
+    const disposedCases = cases.filter(c => c.status === 'Closed').length;
     const newCases = cases.filter(c => c.status === 'Filed').length;
     const disposalRate = totalCases > 0 ? Math.round(disposedCases / totalCases * 100) : 0;
-    // Calculate average case duration (mock calculation)
-    const avgDuration = 45;
+    // Calculate average case duration
+    const now = new Date();
+    const durations = cases.map(c => {
+      const filed = new Date(c.filed);
+      return Math.floor((now.getTime() - filed.getTime()) / (1000 * 60 * 60 * 24));
+    });
+    const avgDuration = durations.length > 0 ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
     // Count by type
     const byType = {
       Criminal: cases.filter(c => c.type === 'Criminal').length,
@@ -133,11 +139,8 @@ export function ReportsPage() {
                         {count}
                       </span>
                       <div
-                        className={`w-full rounded-t-md ${colors[type]} opacity-80 hover:opacity-100 transition-opacity print:bg-slate-800`}
-                        style={{
-                          height: `${Math.max(heightPercent, 10)}%`,
-                          minHeight: '40px'
-                        }}>
+                        className={`bar ${colors[type]} print:bg-slate-800`}
+                        style={{ '--height': `${Math.max(heightPercent, 10)}%` } as React.CSSProperties}>
                       </div>
                     </div>
                     <span className="text-xs text-slate-500 font-medium">
@@ -196,10 +199,8 @@ export function ReportsPage() {
                   </div>
                   <div className="flex-1 bg-slate-100 rounded-full h-8 overflow-hidden print:border print:border-slate-200">
                     <div
-                    className={`${item.color} h-full flex items-center justify-end px-3 text-white text-sm font-bold transition-all duration-500 print:bg-slate-700`}
-                    style={{
-                      width: `${item.count / stats.totalCases * 100}%`
-                    }}>
+                    className={`progress-bar ${item.color} print:bg-slate-700`}
+                    style={{ '--width': `${item.count / stats.totalCases * 100}%` } as React.CSSProperties}>
 
                       {item.count > 0 && item.count}
                     </div>

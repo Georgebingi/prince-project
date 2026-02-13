@@ -92,6 +92,11 @@ export function ClerkDashboard() {
   const upcomingHearings = useMemo(() => {
     return judgeCases.filter(c => c.nextHearing !== 'TBD').sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 5);
   }, [judgeCases]);
+
+  // Check if there are any hearings at all (not just upcoming)
+  const hasAnyHearing = useMemo(() => {
+    return judgeCases.some(c => c.nextHearing !== 'TBD');
+  }, [judgeCases]);
   // Get judges and lawyers for send notices
   const judgesAndLawyers = useMemo(() => {
     return staff.filter(s => s.role.toLowerCase() === 'judge' || s.role.toLowerCase() === 'lawyer');
@@ -278,40 +283,78 @@ export function ClerkDashboard() {
                     Upcoming court hearings
                   </p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setShowScheduleModal(true)}>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowScheduleModal(true)}
+                >
                   View All
                 </Button>
               </div>
 
-              <div className="divide-y divide-slate-100">
-                {upcomingHearings.slice(0, 3).map(hearing => <div key={hearing.id} className="p-6 hover:bg-slate-50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge variant={hearing.daysLeft <= 3 ? 'danger' : 'secondary'}>
-                            {hearing.daysLeft} days left
-                          </Badge>
-                          <span className="text-xs text-slate-400">
-                            {hearing.nextHearing}
-                          </span>
+              {!hasAnyHearing ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <FolderOpen className="h-24 w-24 text-slate-200" />
+                  <p className="text-slate-400 text-sm mt-2">
+                    No hearing at the moment
+                  </p>
+                </div>
+              ) : upcomingHearings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <p className="text-slate-400 text-sm">
+                    No upcoming hearings at the moment
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {upcomingHearings.slice(0, 3).map((hearing) => (
+                    <div
+                      key={hearing.id}
+                      className="p-6 hover:bg-slate-50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Badge
+                              variant={
+                                hearing.daysLeft <= 3 ? "danger" : "secondary"
+                              }
+                            >
+                              {hearing.daysLeft} days left
+                            </Badge>
+
+                            <span className="text-xs text-slate-400">
+                              {hearing.nextHearing}
+                            </span>
+                          </div>
+
+                          <h4 className="font-medium text-slate-900 mb-1">
+                            {hearing.title}
+                          </h4>
+
+                          <p className="text-sm text-slate-600">
+                            Case: {hearing.id}
+                          </p>
+
+                          <p className="text-xs text-slate-500 mt-1">
+                            Judge: {hearing.judge}
+                          </p>
                         </div>
-                        <h4 className="font-medium text-slate-900 mb-1">
-                          {hearing.title}
-                        </h4>
-                        <p className="text-sm text-slate-600">
-                          Case: {hearing.id}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Judge: {hearing.judge}
-                        </p>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSendReminder(hearing)}
+                        >
+                          <Bell className="h-4 w-4 mr-1" />
+                          Send Reminder
+                        </Button>
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => handleSendReminder(hearing)}>
-                        <Bell className="h-4 w-4 mr-1" />
-                        Send Reminder
-                      </Button>
                     </div>
-                  </div>)}
-              </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
 
@@ -498,41 +541,56 @@ export function ClerkDashboard() {
             </div>
 
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-              <div className="space-y-4">
-                {upcomingHearings.map(hearing => <Card key={hearing.id}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge variant={hearing.daysLeft <= 3 ? 'danger' : 'secondary'}>
-                            {hearing.daysLeft} days left
-                          </Badge>
-                          <span className="text-sm font-medium text-slate-600">
-                            {hearing.nextHearing}
-                          </span>
+              {!hasAnyHearing ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <FolderOpen className="h-24 w-24 text-slate-200" />
+                  <p className="text-slate-400 text-sm mt-2">
+                    No hearing at the moment
+                  </p>
+                </div>
+              ) : upcomingHearings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <p className="text-slate-400 text-sm">
+                    No upcoming hearings at the moment
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {upcomingHearings.map(hearing => <Card key={hearing.id}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Badge variant={hearing.daysLeft <= 3 ? 'danger' : 'secondary'}>
+                              {hearing.daysLeft} days left
+                            </Badge>
+                            <span className="text-sm font-medium text-slate-600">
+                              {hearing.nextHearing}
+                            </span>
+                          </div>
+                          <h4 className="font-semibold text-slate-900 mb-1">
+                            {hearing.title}
+                          </h4>
+                          <p className="text-sm text-slate-600 mb-1">
+                            Case: {hearing.id}
+                          </p>
+                          <p className="text-sm text-slate-500">
+                            Judge: {hearing.judge}
+                          </p>
+                          {hearing.lawyer && <p className="text-sm text-slate-500">
+                              Lawyer: {hearing.lawyer}
+                            </p>}
                         </div>
-                        <h4 className="font-semibold text-slate-900 mb-1">
-                          {hearing.title}
-                        </h4>
-                        <p className="text-sm text-slate-600 mb-1">
-                          Case: {hearing.id}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          Judge: {hearing.judge}
-                        </p>
-                        {hearing.lawyer && <p className="text-sm text-slate-500">
-                            Lawyer: {hearing.lawyer}
-                          </p>}
+                        <Button size="sm" onClick={() => {
+                    handleSendReminder(hearing);
+                    setShowScheduleModal(false);
+                  }}>
+                          <Send className="h-4 w-4 mr-1" />
+                          Send Reminder
+                        </Button>
                       </div>
-                      <Button size="sm" onClick={() => {
-                  handleSendReminder(hearing);
-                  setShowScheduleModal(false);
-                }}>
-                        <Send className="h-4 w-4 mr-1" />
-                        Send Reminder
-                      </Button>
-                    </div>
-                  </Card>)}
-              </div>
+                    </Card>)}
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end">

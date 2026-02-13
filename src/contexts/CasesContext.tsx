@@ -1,6 +1,7 @@
 import React, { useEffect, useState, createContext, useContext, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import { casesApi, ApiError } from '../services/api';
+import { casesApi, motionsApi, ordersApi, ApiError } from '../services/api';
+
 export interface CaseDocument {
   id: string;
   name: string;
@@ -37,6 +38,7 @@ export interface Case {
   assignedToJudge?: boolean;
   lawyer?: string;
   createdBy?: string;
+  partyCategory?: string;
 }
 export interface Motion {
   id: number;
@@ -61,9 +63,13 @@ interface CasesContextType {
   motions: Motion[];
   orders: Order[];
   isLoading: boolean;
+  motionsLoading: boolean;
+  ordersLoading: boolean;
   error: string | null;
   lastSync: number;
   refresh: () => Promise<void>;
+  fetchMotions: () => Promise<void>;
+  fetchOrders: () => Promise<void>;
   addCase: (newCase: Omit<Case, 'id' | 'filed' | 'updated'>) => Promise<void>;
   updateCase: (id: string, updates: Partial<Case>) => void;
   deleteCase: (id: string) => Promise<void>;
@@ -74,12 +80,13 @@ interface CasesContextType {
   updateCaseStatus: (caseId: string, status: string) => void;
   scheduleHearing: (caseId: string, date: string) => void;
   submitJudgment: (caseId: string, judgmentText: string) => void;
-  updateMotionStatus: (id: number, status: 'Approved' | 'Rejected') => void;
-  signOrder: (id: number) => void;
-  assignCaseToCourt: (caseId: string, court: string, judge: string) => void;
-  approveCaseRegistration: (caseId: string) => void;
-  assignCaseToLawyer: (caseId: string, lawyer: string) => void;
+  updateMotionStatus: (id: number, status: 'Approved' | 'Rejected', notes?: string) => Promise<void>;
+  signOrder: (id: number) => Promise<void>;
+  assignCaseToCourt: (caseId: string, court: string, judge: string) => Promise<void>;
+  approveCaseRegistration: (caseId: string) => Promise<void>;
+  assignCaseToLawyer: (caseId: string, lawyer: string) => Promise<void>;
 }
+
 const CasesContext = createContext<CasesContextType | undefined>(undefined);
 const INITIAL_CASES: Case[] = [{
   id: 'KDH/2024/001',
@@ -204,48 +211,8 @@ const INITIAL_CASES: Case[] = [{
   documents: [],
   notes: []
 }];
-const INITIAL_MOTIONS: Motion[] = [{
-  id: 1,
-  caseId: 'KDH/2024/001',
-  title: 'Motion for Bail',
-  filedBy: 'Barr. Sani Ahmed',
-  date: '2024-01-15',
-  status: 'Pending',
-  documentUrl: 'bail_motion.pdf'
-}, {
-  id: 2,
-  caseId: 'KDH/2024/022',
-  title: 'Motion for Adjournment',
-  filedBy: 'Barr. John Doe',
-  date: '2024-01-16',
-  status: 'Pending',
-  documentUrl: 'adjournment_request.pdf'
-}, {
-  id: 3,
-  caseId: 'KDH/2024/015',
-  title: 'Motion to Amend Charges',
-  filedBy: 'State Prosecutor',
-  date: '2024-01-14',
-  status: 'Pending',
-  documentUrl: 'amendment_motion.pdf'
-}];
-const INITIAL_ORDERS: Order[] = [{
-  id: 1,
-  caseId: 'KDH/2024/001',
-  title: 'Order of Remand',
-  draftedBy: 'Registrar Chioma',
-  date: '2024-01-15',
-  status: 'Draft',
-  content: 'The defendant is hereby remanded in custody pending the determination of the bail application...'
-}, {
-  id: 2,
-  caseId: 'KDH/2024/042',
-  title: 'Hearing Notice',
-  draftedBy: 'Clerk Amina',
-  date: '2024-01-16',
-  status: 'Draft',
-  content: 'NOTICE IS HEREBY GIVEN that the above matter is listed for hearing on...'
-}];
+// Motions and Orders are now fetched from backend - no hardcoded data
+
 // Helper function to calculate days left until hearing
 const calculateDaysLeft = (hearingDate: string): number => {
   if (hearingDate === 'TBD') return 30;
@@ -336,17 +303,14 @@ export function CasesProvider({
     const saved = localStorage.getItem('court_cases');
     return saved ? JSON.parse(saved) : INITIAL_CASES;
   });
-  const [motions, setMotions] = useState<Motion[]>(() => {
-    const saved = localStorage.getItem('court_motions');
-    return saved ? JSON.parse(saved) : INITIAL_MOTIONS;
-  });
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('court_orders');
-    return saved ? JSON.parse(saved) : INITIAL_ORDERS;
-  });
+  const [motions, setMotions] = useState<Motion[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [motionsLoading, setMotionsLoading] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<number>(Date.now());
+
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -382,16 +346,64 @@ export function CasesProvider({
     }
   }, [user]);
 
+  // Fetch motions from backend
+  const fetchMotions = useCallback(async () => {
+    if (!user) {
+      setMotions([]);
+      return;
+    }
+    setMotionsLoading(true);
+    try {
+      const res = await motionsApi.getMotions({ limit: 100 });
+      if (res.success && Array.isArray(res.data)) {
+        setMotions(res.data as Motion[]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch motions:', err);
+      // Don't set error state to avoid blocking UI, just log it
+    } finally {
+      setMotionsLoading(false);
+    }
+  }, [user]);
+
+  // Fetch orders from backend
+  const fetchOrders = useCallback(async () => {
+    if (!user) {
+      setOrders([]);
+      return;
+    }
+    setOrdersLoading(true);
+    try {
+      const res = await ordersApi.getOrders({ limit: 100 });
+      if (res.success && Array.isArray(res.data)) {
+        setOrders(res.data as Order[]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch orders:', err);
+      // Don't set error state to avoid blocking UI, just log it
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [user]);
+
+
   useEffect(() => {
     refresh();
-  }, [refresh]);
+    fetchMotions();
+    fetchOrders();
+  }, [refresh, fetchMotions, fetchOrders]);
 
-  // Auto-sync cases every 30 seconds
+
+  // Auto-sync cases, motions, and orders every 30 seconds
   useEffect(() => {
     const syncInterval = setInterval(async () => {
       if (user) {
         try {
-          await refresh();
+          await Promise.all([
+            refresh(),
+            fetchMotions(),
+            fetchOrders()
+          ]);
           setLastSync(Date.now());
         } catch (err) {
           console.warn('Auto-sync failed:', err);
@@ -400,17 +412,14 @@ export function CasesProvider({
     }, 30000); // 30 seconds
 
     return () => clearInterval(syncInterval);
-  }, [user, refresh]);
+  }, [user, refresh, fetchMotions, fetchOrders]);
+
 
   useEffect(() => {
     localStorage.setItem('court_cases', JSON.stringify(cases));
   }, [cases]);
-  useEffect(() => {
-    localStorage.setItem('court_motions', JSON.stringify(motions));
-  }, [motions]);
-  useEffect(() => {
-    localStorage.setItem('court_orders', JSON.stringify(orders));
-  }, [orders]);
+  // Motions and orders are now stored in backend only
+
 
   const addCase = async (newCase: Omit<Case, 'id' | 'filed' | 'updated'>) => {
     const hearingDate =
@@ -509,14 +518,35 @@ export function CasesProvider({
       updated: 'Just now'
     } : c));
   };
-  const scheduleHearing = (caseId: string, date: string) => {
-    setCases(cases.map(c => c.id === caseId ? {
-      ...c,
-      nextHearing: date,
-      daysLeft: calculateDaysLeft(date),
-      updated: 'Just now'
-    } : c));
+  const scheduleHearing = async (caseId: string, date: string) => {
+    // Optimistic update: Update local state immediately for instant UI feedback
+    const originalCase = cases.find(c => c.id === caseId);
+    if (originalCase) {
+      setCases(prev => prev.map(c => c.id === caseId ? {
+        ...c,
+        nextHearing: date,
+        daysLeft: calculateDaysLeft(date),
+        updated: 'Just now'
+      } : c));
+    }
+
+    try {
+      // Convert display date to ISO format for API
+      const hearingDateISO = new Date(date).toISOString().split('T')[0];
+      await casesApi.scheduleHearing(caseId, hearingDateISO);
+      // Refresh cases from server to ensure consistency
+      await refresh();
+      setLastSync(Date.now());
+    } catch (err) {
+      // Revert optimistic update on failure
+      if (originalCase) {
+        setCases(prev => prev.map(c => c.id === caseId ? originalCase : c));
+      }
+      const message = err instanceof ApiError ? err.message : 'Failed to schedule hearing';
+      throw new Error(message);
+    }
   };
+
   const submitJudgment = (caseId: string, judgmentText: string) => {
     setCases(cases.map(c => c.id === caseId ? {
       ...c,
@@ -525,34 +555,94 @@ export function CasesProvider({
       updated: 'Just now'
     } : c));
   };
-  const updateMotionStatus = (id: number, status: 'Approved' | 'Rejected') => {
-    setMotions(motions.map(m => m.id === id ? {
-      ...m,
-      status
-    } : m));
+  const updateMotionStatus = async (id: number, status: 'Approved' | 'Rejected', notes?: string) => {
+    // Optimistic update
+    const originalMotions = [...motions];
+    setMotions(motions.map(m => m.id === id ? { ...m, status } : m));
+    
+    try {
+      await motionsApi.updateMotionStatus(id, status, notes);
+      // Refresh to get updated data
+      await fetchMotions();
+    } catch (err) {
+      // Revert on failure
+      setMotions(originalMotions);
+      const message = err instanceof ApiError ? err.message : 'Failed to update motion status';
+      throw new Error(message);
+    }
   };
-  const signOrder = (id: number) => {
-    setOrders(orders.map(o => o.id === id ? {
-      ...o,
-      status: 'Signed'
-    } : o));
+  
+  const signOrder = async (id: number) => {
+    // Optimistic update
+    const originalOrders = [...orders];
+    setOrders(orders.map(o => o.id === id ? { ...o, status: 'Signed' } : o));
+    
+    try {
+      await ordersApi.signOrder(id);
+      // Refresh to get updated data
+      await fetchOrders();
+    } catch (err) {
+      // Revert on failure
+      setOrders(originalOrders);
+      const message = err instanceof ApiError ? err.message : 'Failed to sign order';
+      throw new Error(message);
+    }
   };
-  const assignCaseToCourt = (caseId: string, court: string, judge: string) => {
-    setCases(cases.map(c => c.id === caseId ? {
-      ...c,
-      court,
-      judge,
-      status: 'Assigned',
-      updated: 'Just now'
-    } : c));
+
+  const assignCaseToCourt = async (caseId: string, court: string, judge: string) => {
+    // Optimistic update: Update local state immediately for instant UI feedback
+    const originalCase = cases.find(c => c.id === caseId);
+    if (originalCase) {
+      setCases(prev => prev.map(c => c.id === caseId ? {
+        ...c,
+        court,
+        judge,
+        status: 'Assigned',
+        updated: 'Just now'
+      } : c));
+    }
+
+    try {
+      await casesApi.assignCaseToCourt(caseId, court, judge);
+      // Refresh cases from server to ensure consistency
+      await refresh();
+      setLastSync(Date.now());
+    } catch (err) {
+      // Revert optimistic update on failure
+      if (originalCase) {
+        setCases(prev => prev.map(c => c.id === caseId ? originalCase : c));
+      }
+      const message = err instanceof ApiError ? err.message : 'Failed to assign case to court';
+      throw new Error(message);
+    }
   };
-  const approveCaseRegistration = (caseId: string) => {
-    setCases(cases.map(c => c.id === caseId ? {
-      ...c,
-      status: 'Filed',
-      updated: 'Just now'
-    } : c));
+
+  const approveCaseRegistration = async (caseId: string) => {
+    // Optimistic update: Update local state immediately for instant UI feedback
+    const originalCase = cases.find(c => c.id === caseId);
+    if (originalCase) {
+      setCases(prev => prev.map(c => c.id === caseId ? {
+        ...c,
+        status: 'Filed',
+        updated: 'Just now'
+      } : c));
+    }
+
+    try {
+      await casesApi.approveCaseRegistration(caseId);
+      // Refresh cases from server to ensure consistency
+      await refresh();
+      setLastSync(Date.now());
+    } catch (err) {
+      // Revert optimistic update on failure
+      if (originalCase) {
+        setCases(prev => prev.map(c => c.id === caseId ? originalCase : c));
+      }
+      const message = err instanceof ApiError ? err.message : 'Failed to approve case registration';
+      throw new Error(message);
+    }
   };
+
   const assignCaseToLawyer = async (caseId: string, lawyer: string) => {
     // Optimistic update: Update local state immediately for instant UI feedback
     const originalCase = cases.find(c => c.id === caseId);
@@ -581,9 +671,13 @@ export function CasesProvider({
         motions,
         orders,
         isLoading,
+        motionsLoading,
+        ordersLoading,
         error,
         lastSync,
         refresh,
+        fetchMotions,
+        fetchOrders,
         addCase,
         updateCase,
         deleteCase,
@@ -603,6 +697,7 @@ export function CasesProvider({
       {children}
     </CasesContext.Provider>
   );
+
 }
 // eslint-disable-next-line react-refresh/only-export-components
 export function useCases() {

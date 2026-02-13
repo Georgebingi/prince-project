@@ -1,11 +1,12 @@
-import { useEffect, useState, useRef, Fragment, useMemo } from 'react';
+import { useEffect, useState, useRef, Fragment } from 'react';
 import { MessageCircle, X, Send, Users, Search, Smile, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { useChat } from '../contexts/ChatContext';
+import { useChat, ChatMessage } from '../contexts/ChatContext';
 import { useStaff } from '../contexts/StaffContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystem } from '../contexts/SystemContext';
+
 export function ChatWidget() {
   const {
     user
@@ -29,11 +30,26 @@ export function ChatWidget() {
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [conversationMessages, setConversationMessages] = useState<ChatMessage[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const unreadCount = getUnreadCount();
   // Get selected user details directly from staff list
   const selectedUser = selectedUserId ? staff.find(s => s.id === selectedUserId) : null;
-  const conversationMessages = useMemo(() => selectedUserId ? getConversationMessages(selectedUserId) : [], [selectedUserId, getConversationMessages]);
+  
+  // Fetch messages when selected user changes
+  useEffect(() => {
+    if (selectedUserId) {
+      setMessagesLoading(true);
+      getConversationMessages(selectedUserId).then(messages => {
+        setConversationMessages(messages);
+        setMessagesLoading(false);
+      });
+    } else {
+      setConversationMessages([]);
+    }
+  }, [selectedUserId, getConversationMessages]);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current && view === 'chat') {
@@ -236,10 +252,16 @@ export function ChatWidget() {
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50" style={{
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e2e8f0' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"
         }}>
-              {conversationMessages.length > 0 ? conversationMessages.map((msg, index) => {
+          {messagesLoading ? <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                  <div className="text-center">
+                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p>Loading messages...</p>
+                  </div>
+                </div> : conversationMessages.length > 0 ? conversationMessages.map((msg: ChatMessage, index: number) => {
             const showDate = index === 0 || formatDate(msg.timestamp) !== formatDate(conversationMessages[index - 1].timestamp);
             const isOwnMessage = msg.senderId === user?.staffId;
             return <Fragment key={msg.id}>
+
                       {showDate && <div className="flex justify-center my-4">
                           <span className="bg-white/80 text-slate-600 text-xs px-3 py-1 rounded-full shadow-sm">
                             {formatDate(msg.timestamp)}

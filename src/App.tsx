@@ -6,8 +6,8 @@ import { StaffProvider } from './contexts/StaffContext';
 import { SystemProvider } from './contexts/SystemContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { LiquidGlass } from './components/LiquidGlass';
 import { ChatWidget } from './components/ChatWidget';
+
 import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { WelcomePage } from './pages/WelcomePage';
@@ -18,6 +18,10 @@ import { ClerkDashboard } from './pages/dashboards/ClerkDashboard';
 import { AdminDashboard } from './pages/dashboards/AdminDashboard';
 import { LawyerDashboard } from './pages/dashboards/LawyerDashboard';
 import { PartnerDashboard } from './pages/dashboards/PartnerDashboard';
+import { CourtAdminDashboard } from './pages/dashboards/CourtAdminDashboard';
+import { ITAdminDashboard } from './pages/dashboards/ITAdminDashboard';
+import { AuditorDashboard } from './pages/dashboards/AuditorDashboard';
+
 // Functional Pages
 import { CaseManagementPage } from './pages/CaseManagementPage';
 import { DocumentRepositoryPage } from './pages/DocumentRepositoryPage';
@@ -31,6 +35,8 @@ import { SettingsPage } from './pages/SettingsPage';
 import { WriteJudgmentPage } from './pages/WriteJudgmentPage';
 import { ReviewMotionsPage } from './pages/ReviewMotionsPage';
 import { SignOrdersPage } from './pages/SignOrdersPage';
+import { CalendarPage } from './pages/CalendarPage';
+
 function DashboardRouter() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -66,10 +72,13 @@ function DashboardRouter() {
     case 'clerk':
       return <ClerkDashboard />;
     case 'admin':
-    case 'it_admin':
-    case 'court_admin':
-    case 'auditor':
       return <AdminDashboard />;
+    case 'it_admin':
+      return <ITAdminDashboard />;
+    case 'court_admin':
+      return <CourtAdminDashboard />;
+    case 'auditor':
+      return <AuditorDashboard />;
     case 'lawyer':
       return <LawyerDashboard />;
     case 'partner':
@@ -85,8 +94,9 @@ function AppContent() {
   const showChat =
   user && !['/', '/login', '/signup'].includes(location.pathname);
   return (
-    <LiquidGlass>
+    <>
       <Routes>
+
         <Route path="/" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
@@ -188,12 +198,21 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
+        <Route
+          path="/calendar"
+          element={
+          <ProtectedRoute>
+              <CalendarPage />
+            </ProtectedRoute>
+          } />
 
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
 
       {showChat && <ChatWidget />}
-    </LiquidGlass>);
+    </>);
+
 
 }
 export function App() {

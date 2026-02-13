@@ -1,6 +1,8 @@
 import express from 'express';
 import db from '../config/database.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import { notifyCaseAssigned, notifyHearingScheduled, notifyCaseApproved } from '../utils/notifications.js';
+
 
 const router = express.Router();
 
@@ -26,10 +28,8 @@ router.get('/', async (req, res) => {
     if (req.user.role === 'judge') {
       query += ' AND c.judge_id = ?';
       params.push(req.user.id);
-    } else if (req.user.role === 'lawyer') {
-      query += ' AND c.lawyer_id = ?';
-      params.push(req.user.id);
     }
+    // Lawyers can see all cases (assigned and unassigned for requesting assignment)
 
     // Apply filters
     if (status) {
@@ -502,6 +502,297 @@ router.put('/:id/assign-lawyer', authorizeRole('judge', 'registrar', 'admin'), a
     });
   } catch (error) {
     console.error('Assign lawyer error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// PUT /api/cases/:id/assign-court - Assign case to court (judge + court)
+router.put('/:id/assign-court', authorizeRole('judge', 'registrar', 'admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { court, judgeId } = req.body;
+
+    if (!court || !judgeId) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Court and Judge ID are required'
+        }
+      });
+    }
+
+    // Decode the case ID to handle IDs with slashes (e.g., "KDH/2026/001")
+    const encodedId = id;
+    const caseId = decodeURIComponent(encodedId);
+    const byNumericId = /^\d+$/.test(caseId);
+
+    // Get the case to verify it exists
+    const [cases] = await db.query(
+      `SELECT c.id, c.case_number FROM cases c WHERE ${byNumericId ? 'c.id = ?' : 'c.case_number = ?'}`,
+      [byNumericId ? parseInt(caseId, 10) : caseId]
+    );
+
+    if (cases.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Case not found'
+        }
+      });
+    }
+
+    const caseIdNumeric = cases[0].id;
+
+    // Update the case with court and judge
+    await db.query(
+      'UPDATE cases SET court = ?, judge_id = ?, status = ? WHERE id = ?',
+      [court, judgeId, 'Assigned', caseIdNumeric]
+    );
+
+    // Get judge name for timeline and notification
+    const [judgeResult] = await db.query('SELECT name FROM users WHERE id = ?', [judgeId]);
+    const judgeName = judgeResult.length > 0 ? judgeResult[0].name : 'Unknown';
+
+    // Send notification to judge
+    await notifyCaseAssigned(parseInt(judgeId), cases[0].case_number, cases[0].title || 'Untitled Case', court);
+
+
+    // Add timeline entry
+    try {
+      await db.query(
+        `INSERT INTO case_timeline (case_id, date, title, description, type, created_by)
+         VALUES (?, CURDATE(), ?, ?, ?, ?)`,
+        [caseIdNumeric, 'Case Assigned to Court', `Case assigned to ${court} before Hon. ${judgeName}`, 'assignment', req.user.id]
+      );
+    } catch (error) {
+      console.warn('Case timeline table might not exist');
+    }
+
+    // Log action
+    try {
+      await db.query(
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [req.user.id, req.user.name, 'assign_court', 'case', caseIdNumeric, req.ip]
+      );
+    } catch (error) {
+      console.warn('Audit logs table might not exist');
+    }
+
+    res.json({
+      success: true,
+      message: 'Case assigned to court successfully'
+    });
+  } catch (error) {
+    console.error('Assign court error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// PUT /api/cases/:id/schedule-hearing - Schedule hearing (update next_hearing)
+router.put('/:id/schedule-hearing', authorizeRole('judge', 'registrar', 'admin', 'clerk'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { hearingDate } = req.body;
+
+    if (!hearingDate) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Hearing date is required'
+        }
+      });
+    }
+
+    // Decode the case ID to handle IDs with slashes (e.g., "KDH/2026/001")
+    const encodedId = id;
+    const caseId = decodeURIComponent(encodedId);
+    const byNumericId = /^\d+$/.test(caseId);
+
+    // Get the case to verify it exists
+    const [cases] = await db.query(
+      `SELECT c.id, c.case_number FROM cases c WHERE ${byNumericId ? 'c.id = ?' : 'c.case_number = ?'}`,
+      [byNumericId ? parseInt(caseId, 10) : caseId]
+    );
+
+    if (cases.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Case not found'
+        }
+      });
+    }
+
+    const caseIdNumeric = cases[0].id;
+
+    // Update the case with the hearing date
+    await db.query(
+      'UPDATE cases SET next_hearing = ? WHERE id = ?',
+      [hearingDate, caseIdNumeric]
+    );
+
+    // Get case details for notification
+    const [caseDetails] = await db.query(
+      'SELECT title, judge_id, lawyer_id FROM cases WHERE id = ?',
+      [caseIdNumeric]
+    );
+
+    // Send notifications to judge and lawyer if assigned
+    if (caseDetails.length > 0) {
+      const caseTitle = caseDetails[0].title || 'Untitled Case';
+      const courtName = caseDetails[0].court || 'the court';
+      
+      if (caseDetails[0].judge_id) {
+        await notifyHearingScheduled(caseDetails[0].judge_id, cases[0].case_number, caseTitle, hearingDate, courtName);
+      }
+      if (caseDetails[0].lawyer_id) {
+        await notifyHearingScheduled(caseDetails[0].lawyer_id, cases[0].case_number, caseTitle, hearingDate, courtName);
+      }
+    }
+
+    // Add timeline entry
+    try {
+      await db.query(
+        `INSERT INTO case_timeline (case_id, date, title, description, type, created_by)
+         VALUES (?, CURDATE(), ?, ?, ?, ?)`,
+        [caseIdNumeric, 'Hearing Scheduled', `Hearing scheduled for ${hearingDate}`, 'hearing', req.user.id]
+      );
+    } catch (error) {
+      console.warn('Case timeline table might not exist');
+    }
+
+
+    // Log action
+    try {
+      await db.query(
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [req.user.id, req.user.name, 'schedule_hearing', 'case', caseIdNumeric, req.ip]
+      );
+    } catch (error) {
+      console.warn('Audit logs table might not exist');
+    }
+
+    res.json({
+      success: true,
+      message: 'Hearing scheduled successfully'
+    });
+  } catch (error) {
+    console.error('Schedule hearing error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// PUT /api/cases/:id/approve - Approve case registration (update status)
+router.put('/:id/approve', authorizeRole('judge', 'registrar', 'admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Decode the case ID to handle IDs with slashes (e.g., "KDH/2026/001")
+    const encodedId = id;
+    const caseId = decodeURIComponent(encodedId);
+    const byNumericId = /^\d+$/.test(caseId);
+
+    // Get the case to verify it exists
+    const [cases] = await db.query(
+      `SELECT c.id, c.case_number, c.status FROM cases c WHERE ${byNumericId ? 'c.id = ?' : 'c.case_number = ?'}`,
+      [byNumericId ? parseInt(caseId, 10) : caseId]
+    );
+
+    if (cases.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Case not found'
+        }
+      });
+    }
+
+    const caseData = cases[0];
+    
+    // Check if case is already approved
+    if (caseData.status === 'Filed' || caseData.status === 'Assigned' || caseData.status === 'In Progress') {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'ALREADY_APPROVED',
+          message: 'Case is already approved'
+        }
+      });
+    }
+
+    const caseIdNumeric = caseData.id;
+
+    // Update the case status to 'Filed'
+    await db.query(
+      'UPDATE cases SET status = ? WHERE id = ?',
+      ['Filed', caseIdNumeric]
+    );
+
+    // Get case creator for notification
+    const [caseInfo] = await db.query(
+      'SELECT title, created_by FROM cases WHERE id = ?',
+      [caseIdNumeric]
+    );
+
+    // Send notification to case creator
+    if (caseInfo.length > 0 && caseInfo[0].created_by) {
+      await notifyCaseApproved(caseInfo[0].created_by, cases[0].case_number, caseInfo[0].title || 'Untitled Case');
+    }
+
+    // Add timeline entry
+    try {
+      await db.query(
+        `INSERT INTO case_timeline (case_id, date, title, description, type, created_by)
+         VALUES (?, CURDATE(), ?, ?, ?, ?)`,
+        [caseIdNumeric, 'Case Registration Approved', `Case registration approved by ${req.user.name}`, 'approval', req.user.id]
+      );
+    } catch (error) {
+      console.warn('Case timeline table might not exist');
+    }
+
+
+    // Log action
+    try {
+      await db.query(
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [req.user.id, req.user.name, 'approve_case', 'case', caseIdNumeric, req.ip]
+      );
+    } catch (error) {
+      console.warn('Audit logs table might not exist');
+    }
+
+    res.json({
+      success: true,
+      message: 'Case registration approved successfully'
+    });
+  } catch (error) {
+    console.error('Approve case error:', error);
     res.status(500).json({
       success: false,
       error: {

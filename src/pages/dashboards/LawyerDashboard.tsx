@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
 import { Card } from '../../components/ui/Card';
@@ -7,25 +8,74 @@ import {
   Briefcase,
   Calendar,
   FileText,
-  Clock,
   Plus,
   Search,
   MessageSquare,
+  Loader2,
 } from 'lucide-react';
 import { useCases, Case } from '../../contexts/CasesContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { casesApi } from '../../services/api';
+import { casesApi, documentsApi, notificationsApi } from '../../services/api';
 export function LawyerDashboard() {
   const navigate = useNavigate();
   const { cases, refresh } = useCases();
   const { user } = useAuth();
+
+  // State for documents and notifications
+  const [documents, setDocuments] = useState<Array<{id: number; name: string; case_id: string; case_number?: string; uploaded_at: string; status: string; type: string}>>([]);
+  const [notifications, setNotifications] = useState<Array<{id: number; title: string; message: string; created_at: string; related_resource_id: string; related_resource_type?: string}>>([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const [isLoadingNotifs, setIsLoadingNotifs] = useState(false);
+
+  // Fetch documents and notifications from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoadingDocs(true);
+      setIsLoadingNotifs(true);
+      
+      try {
+        // Fetch documents for this lawyer's cases using lawyerId
+        const docsResponse = await documentsApi.getDocuments({ 
+          limit: 10,
+          lawyerId: user?.id ? String(user.id) : undefined 
+        });
+        if (docsResponse.success && docsResponse.data && Array.isArray(docsResponse.data)) {
+          setDocuments(docsResponse.data);
+        }
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+      } finally {
+        setIsLoadingDocs(false);
+      }
+
+      try {
+        // Fetch notifications for this user
+        const notifsResponse = await notificationsApi.getNotifications({ limit: 10 });
+        if (notifsResponse.success && notifsResponse.data && Array.isArray(notifsResponse.data)) {
+          setNotifications(notifsResponse.data);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      } finally {
+        setIsLoadingNotifs(false);
+      }
+    };
+
+    if (user?.id) {
+      fetchData();
+    }
+  }, [user?.id]);
+
   // Filter cases assigned to the current lawyer
-  const lawyerName = user?.name || 'Barrister Musa';
+  // Use user's actual name, with a fallback based on role
+  const lawyerName = user?.name || (user?.role ? `${user.role.charAt(0).toUpperCase() + user.role.slice(1)}` : 'Legal Practitioner');
   const myCases = cases.filter((c: Case) => {
-    // Check if case is assigned to this lawyer
+    // Check if case is assigned to this lawyer by name
     if (c.lawyer === lawyerName) return true;
-    if (c.lawyer === 'Barr. Musa' && lawyerName === 'Barrister Musa') return true;
-    if (c.lawyer === 'Barrister Musa' && lawyerName === 'Barrister Musa') return true;
+    // Also check if case has no assigned lawyer
+    if (!c.lawyer) return false;
+    // Check if the lawyer name matches partially
+    if (user?.name && c.lawyer.toLowerCase().includes(user.name.toLowerCase())) return true;
 
     return false;
   });
@@ -35,6 +85,9 @@ export function LawyerDashboard() {
     status: c.status,
     nextDate: c.nextHearing !== 'TBD' ? c.nextHearing : 'Not Scheduled'
   }));
+
+  // Calculate documents needing attention
+  const documentsNeedingAttention = documents.filter(d => d.status === 'pending').length;
 
   // Handle case assignment request
   const handleAssignCase = async (caseId: string) => {
@@ -47,43 +100,40 @@ export function LawyerDashboard() {
       } else {
         alert('Failed to submit assignment request. Please try again.');
       }
-    } catch (error: any) {
-      console.error('Assignment request error:', error);
-      if (error.code === 'ALREADY_ASSIGNED') {
-        alert('This case is already assigned to a lawyer.');
-        // Refresh cases to update the UI immediately
-        await refresh();
-      } else if (error.code === 'REQUEST_EXISTS') {
-        alert('You already have a pending assignment request for this case.');
-      } else if (error.status === 400) {
-        alert('Unable to request assignment for this case. It may already be assigned.');
-        // Refresh cases to update the UI immediately
-        await refresh();
-      } else {
-        alert('Failed to submit assignment request. Please check your connection and try again.');
-      }
+  } catch (error: unknown) {
+    console.error('Assignment request error:', error);
+    const err = error as { code?: string; status?: number };
+    if (err.code === 'ALREADY_ASSIGNED') {
+      alert('This case is already assigned to a lawyer.');
+      // Refresh cases to update the UI immediately
+      await refresh();
+    } else if (err.code === 'REQUEST_EXISTS') {
+      alert('You already have a pending assignment request for this case.');
+    } else if (err.status === 400) {
+      alert('Unable to request assignment for this case. It may already be assigned.');
+      // Refresh cases to update the UI immediately
+      await refresh();
+    } else {
+      alert('Failed to submit assignment request. Please check your connection and try again.');
     }
+  }
   };
 
-  const recentDocuments = [
-  {
-    name: 'Defense Motion.pdf',
-    case: 'KDH/2024/001',
-    date: '2 hours ago',
-    status: 'Filed'
-  },
-  {
-    name: 'Affidavit of Service.pdf',
-    case: 'KDH/2024/022',
-    date: 'Yesterday',
-    status: 'Approved'
-  },
-  {
-    name: 'Evidence Bundle A.zip',
-    case: 'KDH/2024/051',
-    date: 'Jan 12',
-    status: 'Pending Review'
-  }];
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <Layout title="Legal Practitioner Portal" showLogoBanner={false}>
@@ -98,7 +148,7 @@ export function LawyerDashboard() {
               Welcome back, {lawyerName}
             </h2>
             <p className="text-blue-100 max-w-xl">
-              You have {activeCases.length} active cases and 2 documents
+              You have {activeCases.length} active cases and {documentsNeedingAttention} document{documentsNeedingAttention !== 1 ? 's' : ''}
               requiring your attention.
             </p>
             <div className="mt-6 flex gap-3">
@@ -243,32 +293,47 @@ export function LawyerDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentDocuments.map((doc, idx) =>
-                    <tr
-                      key={idx}
-                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
-                      onClick={() =>
-                      navigate(`/cases/${encodeURIComponent(doc.case)}`)
-                      }>
-
-                        <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-slate-400" />
-                          {doc.name}
+                    {isLoadingDocs ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                          <p className="mt-2">Loading documents...</p>
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{doc.case}</td>
-                        <td className="px-4 py-3 text-slate-500">{doc.date}</td>
-                        <td className="px-4 py-3">
-                          <Badge
-                          variant={
-                          doc.status === 'Filed' ?
-                          'success' :
-                          doc.status === 'Approved' ?
-                          'success' :
-                          'warning'
-                          }>
+                      </tr>
+                    ) : documents.length > 0 ? (
+                      documents.slice(0, 5).map((doc: {id: number; name: string; case_id: string; case_number?: string; uploaded_at: string; status: string}, idx: number) =>
+                      <tr
+                        key={idx}
+                        className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                        onClick={() =>
+                        navigate(`/cases/${encodeURIComponent(doc.case_number || doc.case_id)}`)
+                        }>
 
-                            {doc.status}
-                          </Badge>
+                          <td className="px-4 py-3 font-medium text-slate-900 flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-slate-400" />
+                            {doc.name}
+                          </td>
+                          <td className="px-4 py-3 text-slate-600">{doc.case_number || doc.case_id}</td>
+                          <td className="px-4 py-3 text-slate-500">{formatDate(doc.uploaded_at)}</td>
+                          <td className="px-4 py-3">
+                            <Badge
+                            variant={
+                            doc.status === 'approved' ?
+                            'success' :
+                            doc.status === 'pending' ?
+                            'warning' :
+                            'secondary'
+                            }>
+
+                              {doc.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      )
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+                          No recent documents found
                         </td>
                       </tr>
                     )}
@@ -285,40 +350,37 @@ export function LawyerDashboard() {
                 Notifications
               </h3>
               <div className="space-y-4">
-                <div
-                  className="flex gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
-                  onClick={() =>
-                  navigate(`/cases/${encodeURIComponent('KDH/2024/001')}`)
-                  }>
-
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                {isLoadingNotifs ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
                   </div>
-                  <div>
-                    <p className="text-sm text-slate-900">
-                      Registrar commented on{' '}
-                      <span className="font-medium">Case #001</span>
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">10 mins ago</p>
+                ) : notifications.length > 0 ? (
+                  notifications.slice(0, 5).map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="flex gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
+                      onClick={() => {
+                        if (notification.related_resource_type === 'case' && notification.related_resource_id) {
+                          navigate(`/cases/${encodeURIComponent(notification.related_resource_id)}`);
+                        }
+                      }}
+                    >
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <MessageSquare className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-900">
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">{formatDate(notification.created_at)}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-slate-500">
+                    <p className="text-sm">No notifications</p>
                   </div>
-                </div>
-                <div
-                  className="flex gap-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
-                  onClick={() =>
-                  navigate(`/cases/${encodeURIComponent('KDH/2024/051')}`)
-                  }>
-
-                  <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <Clock className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-900">
-                      Hearing rescheduled for{' '}
-                      <span className="font-medium">Case #051</span>
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">2 hours ago</p>
-                  </div>
-                </div>
+                )}
               </div>
             </Card>
 
@@ -327,11 +389,10 @@ export function LawyerDashboard() {
                 Court Announcements
               </h3>
               <p className="text-sm text-slate-300 mb-4">
-                The High Court will be on recess from Dec 20th to Jan 5th.
-                Emergency motions only.
+                No current announcements. Check back later for updates from the Court.
               </p>
               <Button size="sm" variant="secondary" className="w-full">
-                Read Circular
+                View Archives
               </Button>
             </Card>
           </div>

@@ -210,7 +210,154 @@ CREATE TABLE IF NOT EXISTS notifications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
+-- Table: motions
+-- Stores legal motions filed for cases
+-- =============================================
+CREATE TABLE IF NOT EXISTS motions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    filed_by INT NOT NULL,
+    filed_date DATE NOT NULL,
+    status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+    document_url VARCHAR(1000),
+    reviewed_by INT,
+    reviewed_at TIMESTAMP NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE,
+    FOREIGN KEY (filed_by) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_case_id (case_id),
+    INDEX idx_filed_by (filed_by),
+    INDEX idx_status (status),
+    INDEX idx_filed_date (filed_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Table: orders
+-- Stores court orders drafted and signed
+-- =============================================
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    title VARCHAR(500) NOT NULL,
+    content TEXT,
+    drafted_by INT NOT NULL,
+    drafted_date DATE NOT NULL,
+    status ENUM('Draft', 'Signed') DEFAULT 'Draft',
+    signed_by INT,
+    signed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE,
+    FOREIGN KEY (drafted_by) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (signed_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_case_id (case_id),
+    INDEX idx_drafted_by (drafted_by),
+    INDEX idx_status (status),
+    INDEX idx_drafted_date (drafted_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Table: partner_agencies
+-- Stores external partner organizations (Police, Correctional, etc.)
+-- =============================================
+CREATE TABLE IF NOT EXISTS partner_agencies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    type ENUM('Law Enforcement', 'Detention', 'Government', 'Legal Aid', 'Forensic', 'Other') NOT NULL,
+    description TEXT,
+    contact_email VARCHAR(255),
+    contact_phone VARCHAR(20),
+    api_endpoint VARCHAR(500),
+    auth_token VARCHAR(500),
+    status ENUM('active', 'inactive', 'maintenance') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_code (code),
+    INDEX idx_type (type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Table: partner_connections
+-- Stores connection status and metrics for partner agencies
+-- =============================================
+CREATE TABLE IF NOT EXISTS partner_connections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    partner_id INT NOT NULL,
+    status ENUM('Connected', 'Disconnected', 'Syncing', 'Error') DEFAULT 'Disconnected',
+    latency_ms INT DEFAULT 0,
+    last_sync_at TIMESTAMP NULL,
+    uptime_percentage DECIMAL(5,2) DEFAULT 99.99,
+    encryption_protocol VARCHAR(50) DEFAULT 'AES-256',
+    tls_version VARCHAR(20) DEFAULT '1.3',
+    health_check_at TIMESTAMP NULL,
+    error_message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (partner_id) REFERENCES partner_agencies(id) ON DELETE CASCADE,
+    INDEX idx_partner_id (partner_id),
+    INDEX idx_status (status),
+    INDEX idx_last_sync (last_sync_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Table: data_exchanges
+-- Stores data transfer records between court and partner agencies
+-- =============================================
+CREATE TABLE IF NOT EXISTS data_exchanges (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    exchange_id VARCHAR(50) UNIQUE NOT NULL,
+    partner_id INT NOT NULL,
+    case_id INT,
+    type ENUM('Warrant Request', 'Prisoner Remand', 'Evidence Transfer', 'Case Data', 'Judgment', 'Other') NOT NULL,
+    direction ENUM('outbound', 'inbound') NOT NULL,
+    status ENUM('Pending', 'Processing', 'Completed', 'Failed', 'Cancelled') DEFAULT 'Pending',
+    data_payload JSON,
+    initiated_by INT NOT NULL,
+    initiated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    error_details TEXT,
+    audit_log_id INT,
+    FOREIGN KEY (partner_id) REFERENCES partner_agencies(id) ON DELETE RESTRICT,
+    FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE SET NULL,
+    FOREIGN KEY (initiated_by) REFERENCES users(id) ON DELETE RESTRICT,
+    INDEX idx_exchange_id (exchange_id),
+    INDEX idx_partner_id (partner_id),
+    INDEX idx_case_id (case_id),
+    INDEX idx_status (status),
+    INDEX idx_type (type),
+    INDEX idx_initiated_at (initiated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Table: chat_messages
+-- Stores chat messages between users
+-- =============================================
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT NOT NULL,
+    receiver_id INT NOT NULL,
+    message TEXT NOT NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_sender_id (sender_id),
+    INDEX idx_receiver_id (receiver_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_is_read (is_read)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =============================================
 -- IMPORTANT: After creating tables, run:
+
 -- npm run create-admin
 -- This will create an admin user with proper password hashing
 -- =============================================

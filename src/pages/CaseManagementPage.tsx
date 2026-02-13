@@ -14,17 +14,24 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCases } from '../contexts/CasesContext';
+import { useAuth } from '../contexts/AuthContext';
 import { CreateCaseModal } from '../components/CreateCaseModal';
 
 export function CaseManagementPage() {
   const navigate = useNavigate();
   const { cases, isLoading, error, refresh } = useCases();
+  const { user } = useAuth();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
   const filteredCases = cases.filter((c) => {
+    // Role-based filtering: lawyers only see their assigned cases
+    if (user?.role === 'lawyer' && c.lawyer !== user.name) {
+      return false;
+    }
+
     const matchesStatus =
       statusFilter === 'all' ||
       c.status.toLowerCase().includes(statusFilter);
@@ -120,101 +127,118 @@ export function CaseManagementPage() {
 
           {!isLoading && (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-3">Case Details</th>
-                      <th className="px-6 py-3">Type</th>
-                      <th className="px-6 py-3">Status</th>
-                      <th className="px-6 py-3">Assigned To</th>
-                      <th className="px-6 py-3">Last Updated</th>
-                      <th className="px-6 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredCases.map((c) => (
-                      <tr
-                        key={c.id}
-                        className="group hover:bg-slate-50 cursor-pointer"
-                        onClick={() => handleCaseClick(c.id)}
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 bg-blue-50 rounded text-blue-600">
-                              <FolderOpen className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <p className="font-semibold">{c.title}</p>
-                              <p className="text-xs text-slate-500 font-mono">
-                                {c.id}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="px-6 py-4">{c.type}</td>
-
-                        <td className="px-6 py-4">
-                          <Badge
-                            variant={
-                              c.status === 'In Progress'
-                                ? 'warning'
-                                : c.status === 'Pending Judgment'
-                                ? 'danger'
-                                : 'secondary'
-                            }
-                          >
-                            {c.status}
-                          </Badge>
-                        </td>
-
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <User className="h-3 w-3" />
-                            <span className="text-xs">{c.judge}</span>
-                          </div>
-                        </td>
-
-                        <td className="px-6 py-4 text-xs text-slate-500">
-                          {c.updated}
-                        </td>
-
-                        <td className="px-6 py-4 text-right">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCaseClick(c.id);
-                            }}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="p-4 border-t border-slate-200 flex justify-between">
-                <p className="text-sm text-slate-500">
-                  Showing 1-{filteredCases.length} of {cases.length} cases
-                </p>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" disabled>
-                    Previous
-                  </Button>
-                  <Button size="sm" variant="outline" disabled>
-                    Next
-                  </Button>
+              {cases.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <FolderOpen className="h-24 w-24 text-slate-200" />
+                  <p className="text-slate-400 text-sm mt-2">
+                    No cases at the moment
+                  </p>
                 </div>
-              </div>
+              ) : filteredCases.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <p className="text-slate-400 text-sm">
+                    No cases match your filters
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-6 py-3">Case Details</th>
+                          <th className="px-6 py-3">Type</th>
+                          <th className="px-6 py-3">Status</th>
+                          <th className="px-6 py-3">Assigned To</th>
+                          <th className="px-6 py-3">Last Updated</th>
+                          <th className="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredCases.map((c) => (
+                          <tr
+                            key={c.id}
+                            className="group hover:bg-slate-50 cursor-pointer"
+                            onClick={() => handleCaseClick(c.id)}
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-start gap-3">
+                                <div className="p-2 bg-blue-50 rounded text-blue-600">
+                                  <FolderOpen className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold">{c.title}</p>
+                                  <p className="text-xs text-slate-500 font-mono">
+                                    {c.id}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-6 py-4">{c.type}</td>
+
+                            <td className="px-6 py-4">
+                              <Badge
+                                variant={
+                                  c.status === 'In Progress'
+                                    ? 'warning'
+                                    : c.status === 'Pending Judgment'
+                                    ? 'danger'
+                                    : 'secondary'
+                                }
+                              >
+                                {c.status}
+                              </Badge>
+                            </td>
+
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <User className="h-3 w-3" />
+                                <span className="text-xs">{c.judge}</span>
+                              </div>
+                            </td>
+
+                            <td className="px-6 py-4 text-xs text-slate-500">
+                              {c.updated}
+                            </td>
+
+                            <td className="px-6 py-4 text-right">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCaseClick(c.id);
+                                }}
+                              >
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="p-4 border-t border-slate-200 flex justify-between">
+                    <p className="text-sm text-slate-500">
+                      Showing 1-{filteredCases.length} of {cases.length} cases
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" disabled>
+                        Previous
+                      </Button>
+                      <Button size="sm" variant="outline" disabled>
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </Card>

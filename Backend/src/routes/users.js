@@ -76,10 +76,10 @@ router.get('/lawyers', authorizeRole('judge', 'registrar', 'admin', 'court_admin
 // GET /api/users - Get all users (admin only)
 router.get('/', authorizeRole('admin', 'registrar'), async (req, res) => {
   try {
-    const { role, department, status, page = 1, limit = 20 } = req.query;
+    const { role, department, status, search, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
 
-    let query = 'SELECT id, name, email, role, department, staff_id, status, created_at FROM users WHERE 1=1';
+    let query = 'SELECT id, name, email, role, department, staff_id, status, created_at, updated_at FROM users WHERE 1=1';
     const params = [];
 
     if (role) {
@@ -97,9 +97,15 @@ router.get('/', authorizeRole('admin', 'registrar'), async (req, res) => {
       params.push(status);
     }
 
+    if (search) {
+      query += ' AND (name LIKE ? OR email LIKE ? OR staff_id LIKE ?)';
+      const searchPattern = `%${search}%`;
+      params.push(searchPattern, searchPattern, searchPattern);
+    }
+
     // Get total count
     const countQuery = query.replace(
-      'SELECT id, name, email, role, department, staff_id, status, created_at',
+      'SELECT id, name, email, role, department, staff_id, status, created_at, updated_at',
       'SELECT COUNT(*) as total'
     );
     const [countResult] = await db.query(countQuery, params);
@@ -132,6 +138,7 @@ router.get('/', authorizeRole('admin', 'registrar'), async (req, res) => {
     });
   }
 });
+
 
 // GET /api/users/lawyers - Get list of lawyers (judges and admins can access)
 router.get('/lawyers', authorizeRole('judge', 'admin', 'registrar', 'court_admin'), async (req, res) => {
@@ -236,7 +243,7 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, department } = req.body;
+    const { name, email, phone, department, role } = req.body;
 
     // Users can only update their own profile unless admin
     if (req.user.id !== parseInt(id) && req.user.role !== 'admin' && req.user.role !== 'registrar') {
@@ -267,6 +274,10 @@ router.put('/:id', async (req, res) => {
     if (department && (req.user.role === 'admin' || req.user.role === 'registrar')) {
       updates.push('department = ?');
       params.push(department);
+    }
+    if (role && (req.user.role === 'admin' || req.user.role === 'registrar')) {
+      updates.push('role = ?');
+      params.push(role);
     }
 
     if (updates.length === 0) {
@@ -301,6 +312,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+
 // POST /api/users/:id/approve - Approve user registration (admin only)
 router.post('/:id/approve', authorizeRole('admin', 'registrar'), async (req, res) => {
   try {
@@ -331,6 +343,75 @@ router.post('/:id/approve', authorizeRole('admin', 'registrar'), async (req, res
     });
   } catch (error) {
     console.error('Approve user error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Internal server error'
+      }
+    });
+  }
+});
+
+// PUT /api/users/:id/status - Update user status (admin/registrar only)
+router.put('/:id/status', authorizeRole('admin', 'registrar'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ['active', 'pending', 'suspended', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid status. Must be one of: active, pending, suspended, rejected'
+        }
+      });
+    }
+
+    // Check if user exists
+    const [users] = await db.query('SELECT id, name, status FROM users WHERE id = ?', [id]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'User not found'
+        }
+      });
+    }
+
+    const oldStatus = users[0].status;
+
+    // Update user status
+    await db.query(
+      'UPDATE users SET status = ? WHERE id = ?',
+      [status, id]
+    );
+
+    // Log action
+    try {
+      await db.query(
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address, details)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [req.user.id, req.user.name, 'status_change', 'user', id, req.ip, JSON.stringify({ oldStatus, newStatus: status })]
+      );
+    } catch (error) {
+      console.warn('Audit logs table might not exist');
+    }
+
+    res.json({
+      success: true,
+      message: `User status updated to ${status} successfully`,
+      data: {
+        id,
+        status
+      }
+    });
+  } catch (error) {
+    console.error('Update user status error:', error);
     res.status(500).json({
       success: false,
       error: {
