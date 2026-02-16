@@ -202,9 +202,11 @@ export function useDeleteCase() {
 }
 
 /**
- * Assign lawyer to case
+ * Assign lawyer to case with optimistic update
  */
 export function useAssignLawyer() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ caseId, lawyerId }: { caseId: string; lawyerId: string }) => {
       const response = await casesApi.assignLawyerToCase(caseId, lawyerId);
@@ -213,16 +215,38 @@ export function useAssignLawyer() {
       }
       return response.data;
     },
-    onSuccess: (_data, variables) => {
+    onMutate: async ({ caseId, lawyerId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.cases.detail(caseId) });
+
+      // Snapshot previous value
+      const previousCase = queryClient.getQueryData<Case>(queryKeys.cases.detail(caseId));
+
+      // Optimistically update the case with the new lawyer
+      queryClient.setQueryData<Case>(queryKeys.cases.detail(caseId), (old) => {
+        return old ? { ...old, lawyer: lawyerId } : old;
+      });
+
+      return { previousCase, caseId };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousCase) {
+        queryClient.setQueryData(queryKeys.cases.detail(context.caseId), context.previousCase);
+      }
+    },
+    onSettled: (_data, _error, variables) => {
       invalidateCache.case(variables.caseId);
     },
   });
 }
 
 /**
- * Schedule hearing for case
+ * Schedule hearing for case with optimistic update
  */
 export function useScheduleHearing() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({
       caseId,
@@ -237,7 +261,27 @@ export function useScheduleHearing() {
       }
       return response.data;
     },
-    onSuccess: (_data, variables) => {
+    onMutate: async ({ caseId, hearingDate }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.cases.detail(caseId) });
+
+      // Snapshot previous value
+      const previousCase = queryClient.getQueryData<Case>(queryKeys.cases.detail(caseId));
+
+      // Optimistically update the hearing date
+      queryClient.setQueryData<Case>(queryKeys.cases.detail(caseId), (old) => {
+        return old ? { ...old, nextHearing: hearingDate } : old;
+      });
+
+      return { previousCase, caseId };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousCase) {
+        queryClient.setQueryData(queryKeys.cases.detail(context.caseId), context.previousCase);
+      }
+    },
+    onSettled: (_data, _error, variables) => {
       invalidateCache.case(variables.caseId);
       invalidateCache.calendar();
     },
@@ -245,9 +289,11 @@ export function useScheduleHearing() {
 }
 
 /**
- * Request case assignment (for lawyers)
+ * Request case assignment (for lawyers) with optimistic update
  */
 export function useRequestCaseAssignment() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (caseId: string) => {
       const response = await casesApi.requestCaseAssignment(caseId);
@@ -256,7 +302,29 @@ export function useRequestCaseAssignment() {
       }
       return response.data;
     },
-    onSuccess: () => {
+    onMutate: async (caseId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.cases.all });
+
+      // Snapshot previous value
+      const previousCases = queryClient.getQueryData<Case[]>(queryKeys.cases.all);
+
+      // Optimistically update case status to show assignment requested
+      queryClient.setQueryData<Case[]>(queryKeys.cases.all, (old) => {
+        return old ? old.map((c) => 
+          c.id === caseId ? { ...c, status: 'Assignment Requested' } : c
+        ) : old;
+      });
+
+      return { previousCases };
+    },
+    onError: (_err, _caseId, context) => {
+      // Rollback on error
+      if (context?.previousCases) {
+        queryClient.setQueryData(queryKeys.cases.all, context.previousCases);
+      }
+    },
+    onSettled: () => {
       invalidateCache.cases();
     },
   });

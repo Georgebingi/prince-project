@@ -15,10 +15,25 @@ export const queryKeys = {
   users: {
     all: ['users'] as const,
     detail: (id: string) => ['users', 'detail', id] as const,
+    lawyers: ['users', 'lawyers'] as const,
+    judges: ['users', 'judges'] as const,
   },
   documents: {
     all: ['documents'] as const,
     byCase: (caseId: string) => ['documents', 'case', caseId] as const,
+    detail: (id: string) => ['documents', 'detail', id] as const,
+  },
+  motions: {
+    all: ['motions'] as const,
+    byCase: (caseId: string) => ['motions', 'case', caseId] as const,
+    detail: (id: number) => ['motions', 'detail', id] as const,
+    pending: ['motions', 'pending'] as const,
+  },
+  orders: {
+    all: ['orders'] as const,
+    byCase: (caseId: string) => ['orders', 'case', caseId] as const,
+    detail: (id: number) => ['orders', 'detail', id] as const,
+    draft: ['orders', 'draft'] as const,
   },
   calendar: {
     all: ['calendar'] as const,
@@ -27,6 +42,11 @@ export const queryKeys = {
   chat: {
     all: ['chat'] as const,
     messages: (userId: string) => ['chat', 'messages', userId] as const,
+  },
+  notifications: {
+    all: ['notifications'] as const,
+    unread: ['notifications', 'unread'] as const,
+    detail: (id: string) => ['notifications', 'detail', id] as const,
   },
 };
 
@@ -111,6 +131,84 @@ export const optimisticUpdates = {
         old ? old.filter((c) => c.id !== caseId) : undefined
     );
   },
+
+  // Add document to case optimistically
+  addDocument: (caseId: string, newDoc: Record<string, unknown>) => {
+    queryClient.setQueryData(
+      queryKeys.documents.byCase(caseId),
+      (old: Array<Record<string, unknown>> | undefined) => 
+        old ? [newDoc, ...old] : [newDoc]
+    );
+  },
+
+  // Remove document from case optimistically
+  removeDocument: (caseId: string, docId: string) => {
+    queryClient.setQueryData(
+      queryKeys.documents.byCase(caseId),
+      (old: Array<{ id: string }> | undefined) => 
+        old ? old.filter((d) => d.id !== docId) : undefined
+    );
+  },
+
+  // Add motion optimistically
+  addMotion: (newMotion: Record<string, unknown>) => {
+    queryClient.setQueryData(
+      queryKeys.motions.all,
+      (old: Array<Record<string, unknown>> | undefined) => 
+        old ? [newMotion, ...old] : [newMotion]
+    );
+  },
+
+  // Update motion status optimistically
+  updateMotion: (motionId: number, updates: Record<string, unknown>) => {
+    queryClient.setQueryData(
+      queryKeys.motions.detail(motionId),
+      (old: Record<string, unknown> | undefined) => 
+        old ? { ...old, ...updates } : undefined
+    );
+  },
+
+  // Add order optimistically
+  addOrder: (newOrder: Record<string, unknown>) => {
+    queryClient.setQueryData(
+      queryKeys.orders.all,
+      (old: Array<Record<string, unknown>> | undefined) => 
+        old ? [newOrder, ...old] : [newOrder]
+    );
+  },
+
+  // Update order optimistically
+  updateOrder: (orderId: number, updates: Record<string, unknown>) => {
+    queryClient.setQueryData(
+      queryKeys.orders.detail(orderId),
+      (old: Record<string, unknown> | undefined) => 
+        old ? { ...old, ...updates } : undefined
+    );
+  },
+
+  // Mark notification as read optimistically
+  markNotificationRead: (notificationId: string) => {
+    queryClient.setQueryData(
+      queryKeys.notifications.detail(notificationId),
+      (old: Record<string, unknown> | undefined) => 
+        old ? { ...old, isRead: true } : undefined
+    );
+    queryClient.setQueryData(
+      queryKeys.notifications.all,
+      (old: Array<Record<string, unknown>> | undefined) => 
+        old ? old.map((n) => n.id === notificationId ? { ...n, isRead: true } : n) : undefined
+    );
+  },
+
+  // Remove notification optimistically
+  removeNotification: (notificationId: string) => {
+    queryClient.removeQueries({ queryKey: queryKeys.notifications.detail(notificationId) });
+    queryClient.setQueryData(
+      queryKeys.notifications.all,
+      (old: Array<{ id: string }> | undefined) => 
+        old ? old.filter((n) => n.id !== notificationId) : undefined
+    );
+  },
 };
 
 // Cache invalidation helpers
@@ -119,6 +217,15 @@ export const invalidateCache = {
   case: (id: string) => queryClient.invalidateQueries({ queryKey: queryKeys.cases.detail(id) }),
   users: () => queryClient.invalidateQueries({ queryKey: queryKeys.users.all }),
   documents: () => queryClient.invalidateQueries({ queryKey: queryKeys.documents.all }),
+  documentsByCase: (caseId: string) => queryClient.invalidateQueries({ queryKey: queryKeys.documents.byCase(caseId) }),
+  motions: () => queryClient.invalidateQueries({ queryKey: queryKeys.motions.all }),
+  motionsByCase: (caseId: string) => queryClient.invalidateQueries({ queryKey: queryKeys.motions.byCase(caseId) }),
+  motion: (id: number) => queryClient.invalidateQueries({ queryKey: queryKeys.motions.detail(id) }),
+  orders: () => queryClient.invalidateQueries({ queryKey: queryKeys.orders.all }),
+  ordersByCase: (caseId: string) => queryClient.invalidateQueries({ queryKey: queryKeys.orders.byCase(caseId) }),
+  order: (id: number) => queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(id) }),
   calendar: () => queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all }),
+  notifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all }),
+  notification: (id: string) => queryClient.invalidateQueries({ queryKey: queryKeys.notifications.detail(id) }),
   all: () => queryClient.invalidateQueries(),
 };

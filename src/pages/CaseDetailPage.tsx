@@ -31,8 +31,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { EditCaseModal } from '../components/EditCaseModal';
 import { casesApi, documentsApi } from '../services/api';
 import { showSuccess } from '../hooks/useToast';
-
 import { handleApiError } from '../utils/errorHandler';
+
 
 function mapBackendDocToFrontend(d: { id: number; name: string; type: string; file_size?: number; uploaded_at?: string; uploaded_by_name?: string }): CaseDocument {
   return {
