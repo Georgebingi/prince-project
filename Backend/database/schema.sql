@@ -339,6 +339,27 @@ CREATE TABLE IF NOT EXISTS data_exchanges (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
+-- Table: case_assignment_requests
+-- Stores lawyer requests to be assigned to cases
+-- =============================================
+CREATE TABLE IF NOT EXISTS case_assignment_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    lawyer_id INT NOT NULL,
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    reviewed_by INT NULL,
+    reviewed_at TIMESTAMP NULL,
+    FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE,
+    FOREIGN KEY (lawyer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_case_id (case_id),
+    INDEX idx_lawyer_id (lawyer_id),
+    INDEX idx_status (status),
+    INDEX idx_requested_at (requested_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
 -- Table: chat_messages
 -- Stores chat messages between users
 -- =============================================
@@ -360,6 +381,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 -- =============================================
 -- IMPORTANT: After creating tables, run:
+
 
 -- npm run create-admin
 -- This will create an admin user with proper password hashing
