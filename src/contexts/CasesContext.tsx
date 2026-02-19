@@ -59,6 +59,7 @@ export interface Motion {
   date: string;
   status: 'Pending' | 'Approved' | 'Rejected';
   documentUrl?: string;
+  documentId?: number;
 }
 export interface Order {
   id: number;

@@ -1,12 +1,30 @@
 import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import db from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
 import upload from '../middleware/upload.js';
 
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const router = express.Router();
+
+// Test endpoint - no authentication required
+router.get('/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Documents router is working',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // All routes require authentication
 router.use(authenticateToken);
+
 
 // POST /api/documents/upload
 router.post('/upload', upload.single('file'), async (req, res) => {
@@ -45,8 +63,23 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       });
     }
 
-    // For now, store file path (you'll implement cloud storage later)
-    const filePath = `documents/${caseId}/${Date.now()}_${req.file.originalname}`;
+    // Move file from temp to case folder
+    const caseDir = path.join(__dirname, '..', 'public', 'documents', caseId.toString());
+    const fileName = `${Date.now()}_${req.file.originalname}`;
+    const destPath = path.join(caseDir, fileName);
+
+    // Create case directory if it doesn't exist
+    if (!fs.existsSync(caseDir)) {
+      fs.mkdirSync(caseDir, { recursive: true });
+    }
+
+    // Move file from temp to case folder
+    const tempFilePath = req.file.path;
+    fs.renameSync(tempFilePath, destPath);
+
+    // Store relative file path
+    const filePath = `documents/${caseId}/${fileName}`;
+
 
     // Save document metadata to database
     const [result] = await db.query(
@@ -181,5 +214,78 @@ router.get('/', async (req, res) => {
     });
   }
 });
+
+// GET /api/documents/:id/download - Download a document
+router.get('/:id/download', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get document metadata from database
+    const [documents] = await db.query(
+      'SELECT * FROM documents WHERE id = ?',
+      [id]
+    );
+
+    if (documents.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Document not found'
+        }
+      });
+    }
+
+    const document = documents[0];
+
+    const filePath = document.file_path;
+
+    // Construct full path - files are stored in public/documents relative to project root
+    // When server is started from Backend folder, 'public' refers to Backend/public
+    // But uploads save to 'public/documents' relative to where server starts
+    // To handle both cases, check multiple possible locations
+    const possiblePaths = [
+      path.join(__dirname, '..', '..', 'public', filePath),  // Backend/public/documents/...
+      path.join(__dirname, '..', 'public', filePath),         // Backend/public/documents/... (alternative)
+      path.resolve('public', filePath)                         // Project root public/documents/...
+    ];
+
+    let fullPath = '';
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        fullPath = p;
+        break;
+      }
+    }
+
+    if (!fullPath) {
+      console.error('File not found in any location. Searched paths:', possiblePaths);
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'File not found on server'
+        }
+      });
+    }
+
+    // Expose Content-Disposition header for frontend access
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+
+    // Use Express built-in download (safer + cleaner)
+    return res.download(fullPath, document.name);
+
+  } catch (error) {
+    console.error('Download error:', error);
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: error.message || 'Internal server error'
+      }
+    });
+  }
+});
+
 
 export default router;

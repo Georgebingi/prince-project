@@ -1,13 +1,15 @@
 import { useAuth } from '../contexts/AuthContext';
-import { JudgeDashboard } from './dashboards/JudgeDashboard';
-import { RegistrarDashboard } from './dashboards/RegistrarDashboard';
-import { ClerkDashboard } from './dashboards/ClerkDashboard';
-import { LawyerDashboard } from './dashboards/LawyerDashboard';
-import { AdminDashboard } from './dashboards/AdminDashboard';
-import { PartnerDashboard } from './dashboards/PartnerDashboard';
-import { CourtAdminDashboard } from './dashboards/CourtAdminDashboard';
-import { ITAdminDashboard } from './dashboards/ITAdminDashboard';
-import { AuditorDashboard } from './dashboards/AuditorDashboard';
+
+import JudgeDashboard from './dashboards/JudgeDashboard';
+import RegistrarDashboard from './dashboards/RegistrarDashboard';
+import ClerkDashboard from './dashboards/ClerkDashboard';
+import LawyerDashboard from './dashboards/LawyerDashboard';
+import AdminDashboard from './dashboards/AdminDashboard';
+import PartnerDashboard from './dashboards/PartnerDashboard';
+import CourtAdminDashboard from './dashboards/CourtAdminDashboard';
+import ITAdminDashboard from './dashboards/ITAdminDashboard';
+import AuditorDashboard from './dashboards/AuditorDashboard';
+
 export function DashboardPage() {
   const { user } = useAuth();
   if (!user) {

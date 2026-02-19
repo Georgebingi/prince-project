@@ -21,8 +21,8 @@ router.get('/', async (req, res) => {
         m.filed_by,
         m.filed_date as date,
         m.status,
-        m.document_url,
         m.description,
+        m.document_url AS documentUrl,  -- use this directly
         c.case_number,
         c.title as case_title,
         u.name as filed_by_name
@@ -54,17 +54,13 @@ router.get('/', async (req, res) => {
     }
 
     // Get total count
-    const countQuery = query.replace(
-      'SELECT m.id, m.case_id, m.title, m.filed_by, m.filed_date as date, m.status, m.document_url, m.description, c.case_number, c.title as case_title, u.name as filed_by_name',
-      'SELECT COUNT(*) as total'
-    );
+    const countQuery = `SELECT COUNT(*) as total FROM (${query}) as sub`;
     const [countResult] = await db.query(countQuery, params);
     const total = countResult && countResult[0] ? countResult[0].total : 0;
 
-
     // Get paginated results
     query += ' ORDER BY m.filed_date DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), parseInt(offset));
+    params.push(parseInt(limit, 10), parseInt(offset, 10));
 
     const [motions] = await db.query(query, params);
 
@@ -76,7 +72,7 @@ router.get('/', async (req, res) => {
       filedBy: m.filed_by_name || 'Unknown',
       date: m.date ? new Date(m.date).toISOString().split('T')[0] : '',
       status: m.status || 'Pending',
-      documentUrl: m.document_url,
+      documentUrl: m.documentUrl || null,  // already here
       description: m.description,
       caseTitle: m.case_title
     }));
@@ -86,8 +82,8 @@ router.get('/', async (req, res) => {
       data: formattedMotions,
       pagination: {
         total,
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         totalPages: Math.ceil(total / limit)
       }
     });
@@ -102,6 +98,8 @@ router.get('/', async (req, res) => {
     });
   }
 });
+
+
 
 // POST /api/motions - Create new motion (lawyers only)
 router.post('/', authorizeRole('lawyer', 'admin', 'judge'), async (req, res) => {

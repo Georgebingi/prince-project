@@ -42,7 +42,7 @@ export function CreateCaseModal({
   onSuccess
 }: CreateCaseModalProps) {
 
-  const { addCase } = useCases();
+  const { addCase, refresh } = useCases();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -215,6 +215,9 @@ export function CreateCaseModal({
             // Continue with other documents even if one fails
           }
         }
+        
+        // Refresh cases to get the updated documents from the backend
+        await refresh();
       }
 
       // Reset form and close modal

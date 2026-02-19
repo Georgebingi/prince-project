@@ -1,14 +1,20 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, Suspense, lazy } from 'react';
+// ======================================================
+// App.tsx - Main Application Entry Point
+// ======================================================
+
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
+import { Suspense, lazy } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { CasesProvider } from './contexts/CasesContext';
 import { StaffProvider } from './contexts/StaffContext';
 import { SystemProvider } from './contexts/SystemContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { SocketProvider } from './contexts/SocketContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
 import { ChatWidget } from './components/ChatWidget';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastContainer } from './components/ui/Toast';
@@ -16,13 +22,16 @@ import { useToast } from './hooks/useToast';
 import { queryClient } from './queryClient';
 import { initPerformanceMonitoring } from './utils/performance';
 
-
-// Eagerly load critical pages
+// ======================================================
+// Eagerly Loaded Pages
+// ======================================================
 import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { WelcomePage } from './pages/WelcomePage';
 
-// Lazy load dashboard components (heavy)
+// ======================================================
+// Lazy Loaded Dashboard Pages
+// ======================================================
 const JudgeDashboard = lazy(() => import('./pages/dashboards/JudgeDashboard'));
 const RegistrarDashboard = lazy(() => import('./pages/dashboards/RegistrarDashboard'));
 const ClerkDashboard = lazy(() => import('./pages/dashboards/ClerkDashboard'));
@@ -33,7 +42,9 @@ const CourtAdminDashboard = lazy(() => import('./pages/dashboards/CourtAdminDash
 const ITAdminDashboard = lazy(() => import('./pages/dashboards/ITAdminDashboard'));
 const AuditorDashboard = lazy(() => import('./pages/dashboards/AuditorDashboard'));
 
-// Lazy load functional pages
+// ======================================================
+// Lazy Loaded Functional Pages
+// ======================================================
 const CaseManagementPage = lazy(() => import('./pages/CaseManagementPage'));
 const DocumentRepositoryPage = lazy(() => import('./pages/DocumentRepositoryPage'));
 const StaffRegistrationPage = lazy(() => import('./pages/StaffRegistrationPage'));
@@ -47,11 +58,14 @@ const ReviewMotionsPage = lazy(() => import('./pages/ReviewMotionsPage'));
 const SignOrdersPage = lazy(() => import('./pages/SignOrdersPage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 
-// Initialize performance monitoring
+// ======================================================
+// Initialize Performance Monitoring
+// ======================================================
 initPerformanceMonitoring();
 
-
-// Loading fallback component
+// ======================================================
+// Page Loader Component (Suspense Fallback)
+// ======================================================
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-4">
@@ -61,15 +75,27 @@ const PageLoader = () => (
   </div>
 );
 
-function DashboardRouter() {
+// ======================================================
+// Protected Route Wrapper
+// ======================================================
+export function ProtectedRoute() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  return <Outlet />; // Allows nested routes to render
+}
 
+// ======================================================
+// Dashboard Router
+// ======================================================
+
+function DashboardRouter() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Store current route for refresh persistence
   useEffect(() => {
-    if (user && location.pathname !== '/login' && location.pathname !== '/signup' && location.pathname !== '/') {
+    if (user && !['/', '/login', '/signup'].includes(location.pathname)) {
       localStorage.setItem('court_last_route', location.pathname + location.search);
     }
   }, [location, user]);
@@ -84,287 +110,221 @@ function DashboardRouter() {
     }
   }, [user, navigate, location.pathname]);
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!user) return null;
 
-  // Route to role-specific dashboard
   switch (user.role) {
-    case 'judge':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <JudgeDashboard />
-        </Suspense>
-      );
-    case 'registrar':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <RegistrarDashboard />
-        </Suspense>
-      );
-    case 'clerk':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <ClerkDashboard />
-        </Suspense>
-      );
-    case 'admin':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <AdminDashboard />
-        </Suspense>
-      );
-    case 'it_admin':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <ITAdminDashboard />
-        </Suspense>
-      );
-    case 'court_admin':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <CourtAdminDashboard />
-        </Suspense>
-      );
-    case 'auditor':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <AuditorDashboard />
-        </Suspense>
-      );
-    case 'lawyer':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <LawyerDashboard />
-        </Suspense>
-      );
-    case 'partner':
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <PartnerDashboard />
-        </Suspense>
-      );
-
-    default:
-      return <Navigate to="/login" replace />;
+    case 'judge': return <JudgeDashboard />;
+    case 'registrar': return <RegistrarDashboard />;
+    case 'clerk': return <ClerkDashboard />;
+    case 'admin': return <AdminDashboard />;
+    case 'it_admin': return <ITAdminDashboard />;
+    case 'court_admin': return <CourtAdminDashboard />;
+    case 'auditor': return <AuditorDashboard />;
+    case 'lawyer': return <LawyerDashboard />;
+    case 'partner': return <PartnerDashboard />;
+    default: return <Navigate to="/login" replace />;
   }
 }
+
+
+// ======================================================
+// App Content (All Routes)
+// ======================================================
 function AppContent() {
   const { user } = useAuth();
   const location = useLocation();
   const { toasts, removeToast } = useToast();
-  
-  // Only show chat widget if user is logged in and not on public pages
-  const showChat =
-  user && !['/', '/login', '/signup'].includes(location.pathname);
+
+  const showChat = user && !['/', '/login', '/signup'].includes(location.pathname);
+
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+
       <Routes>
-
-
+        {/* ====================================================== */}
+        {/* Public Pages */}
+        {/* ====================================================== */}
         <Route path="/" element={<WelcomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
 
+        {/* ====================================================== */}
         {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-          <ProtectedRoute>
-              <DashboardRouter />
-            </ProtectedRoute>
-          } />
-
-        <Route
-          path="/cases"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+        {/* ====================================================== */}
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/dashboard"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <CaseManagementPage />
+                <DashboardRouter />
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/cases/:id"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/cases"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <CaseDetailPage />
+                <ErrorBoundary>
+                  <CaseManagementPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/documents"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/cases/:id"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <DocumentRepositoryPage />
+                <ErrorBoundary>
+                  <CaseDetailPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/staff"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <StaffRegistrationPage />
+                <ErrorBoundary>
+                  <DocumentRepositoryPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/reports"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/staff"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <ReportsPage />
+                <ErrorBoundary>
+                  <StaffRegistrationPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/audit"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <AuditLogPage />
+                <ErrorBoundary>
+                  <ReportsPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/interoperability"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/audit"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <PartnerInteroperabilityPage />
+                <ErrorBoundary>
+                  <AuditLogPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/settings"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/interoperability"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <SettingsPage />
+                <ErrorBoundary>
+                  <PartnerInteroperabilityPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/write-judgment"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <WriteJudgmentPage />
+                <ErrorBoundary>
+                  <SettingsPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/review-motions"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/write-judgment"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <ReviewMotionsPage />
+                <ErrorBoundary>
+                  <WriteJudgmentPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/sign-orders"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/review-motions"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <SignOrdersPage />
+                <ErrorBoundary>
+                  <ReviewMotionsPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
-
-
-        <Route
-          path="/calendar"
-          element={
-          <ProtectedRoute>
-            <ErrorBoundary>
+            }
+          />
+          <Route
+            path="/sign-orders"
+            element={
               <Suspense fallback={<PageLoader />}>
-                <CalendarPage />
+                <ErrorBoundary>
+                  <SignOrdersPage />
+                </ErrorBoundary>
               </Suspense>
-            </ErrorBoundary>
-            </ProtectedRoute>
-          } />
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ErrorBoundary>
+                  <CalendarPage />
+                </ErrorBoundary>
+              </Suspense>
+            }
+          />
+        </Route>
 
-
+        {/* ====================================================== */}
+        {/* Catch-all Route */}
+        {/* ====================================================== */}
         <Route path="*" element={<Navigate to="/" replace />} />
-
       </Routes>
 
       {showChat && <ChatWidget />}
-    </>);
-
-
+    </>
+  );
 }
+
+// ======================================================
+// Main App Component
+// ======================================================
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <SocketProvider>
-          <SystemProvider>
-            <StaffProvider>
-              <CasesProvider>
-                <ChatProvider>
-                  <Router
-                    future={{
-                      v7_startTransition: true,
-                      v7_relativeSplatPath: true,
-                    }}
-                  >
+      <Router
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <AuthProvider>
+          <SocketProvider>
+            <SystemProvider>
+              <StaffProvider>
+                <CasesProvider>
+                  <ChatProvider>
                     <AppContent />
-                  </Router>
-                </ChatProvider>
-              </CasesProvider>
-            </StaffProvider>
-          </SystemProvider>
-        </SocketProvider>
-      </AuthProvider>
+                  </ChatProvider>
+                </CasesProvider>
+              </StaffProvider>
+            </SystemProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </Router>
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 }
+
+// ======================================================
+// End of App.tsx
+// ======================================================

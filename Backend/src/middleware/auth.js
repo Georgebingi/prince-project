@@ -4,8 +4,14 @@ import db from '../config/database.js';
 
 export const authenticateToken = async (req, res, next) => {
   try {
+    // Check Authorization header first, then query parameter (for direct download URLs)
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    let token = authHeader && authHeader.split(' ')[1];
+    
+    // If no token in header, check query parameter (for direct download URLs)
+    if (!token && req.query.token) {
+      token = req.query.token;
+    }
 
     if (!token) {
       return res.status(401).json({

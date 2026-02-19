@@ -9,6 +9,7 @@ import { useCases, CaseDocument } from '../../contexts/CasesContext';
 import { useSystem } from '../../contexts/SystemContext';
 import { useStaff } from '../../contexts/StaffContext';
 import { showSuccess, showWarning } from '../../hooks/useToast';
+import { documentsApi } from '../../services/api';
 interface Task {
   id: string;
   task: string;
@@ -119,10 +120,13 @@ export default function ClerkDashboard() {
       createdBy: 'Court Clerk'
     });
   };
-  const handleOpenExternalViewer = (doc: CaseDocument) => {
-    window.open(`#view-document-${doc.id}`, '_blank');
-    showSuccess(`Opening ${doc.name} in external viewer`);
-  };
+const handleOpenExternalViewer = (doc: CaseDocument) => {
+  try {
+    documentsApi.downloadDocument(doc.id);
+  } catch (err: unknown) {
+    showWarning(`Download failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+  }
+};
   const handleSendReminder = (caseItem: (typeof judgeCases)[0]) => {
     addSystemNotification({
       title: `Hearing Reminder: ${caseItem.id}`,

@@ -30,7 +30,7 @@ import { useCases, CaseDocument, CaseNote, type Case } from '../contexts/CasesCo
 import { useAuth } from '../contexts/AuthContext';
 import { EditCaseModal } from '../components/EditCaseModal';
 import { casesApi, documentsApi } from '../services/api';
-import { showSuccess } from '../hooks/useToast';
+import { showSuccess, showError } from '../hooks/useToast';
 import { handleApiError } from '../utils/errorHandler';
 
 
@@ -722,70 +722,91 @@ export default function CaseDetailPage() {
             )}
 
 
-            {activeTab === 'documents' && (
-              <Card noPadding>
-                <div className="p-4 border-b border-slate-100 bg-slate-50">
-                  <div className="flex justify-between items-center">
+            {/* Documents Tab */}
+              {activeTab === 'documents' && (
+                <Card noPadding>
+                  <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                     <h3 className="font-semibold text-slate-900">Case Documents</h3>
-                    <Button size="sm" onClick={() => fileInputRef.current?.click()} isLoading={uploading}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Document
-                    </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.jpg,.png"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                      aria-label="Upload case document"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={() => fileInputRef.current?.click()} isLoading={uploading} title="Upload Document">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Document
+                      </Button>
+                      <input
+                        ref={fileInputRef}
+                        id="case-document-upload"
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.jpg,.png"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        aria-label="Upload case document"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {(caseData?.documents?.length ?? 0) > 0 ? (
-
-                  <div className="divide-y divide-slate-100">
-                    {caseData?.documents?.map((doc) => (
-
-                      <div key={doc.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-red-50 text-red-600 rounded">
-                            <FileText className="h-5 w-5" />
+                  {(caseData?.documents?.length ?? 0) > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                      {caseData.documents.map((doc) => (
+                        <div key={doc.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-red-50 text-red-600 rounded">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-slate-900">{doc.name}</p>
+                              <p className="text-xs text-slate-500">
+                                {doc.type} • {doc.uploadedAt} • {doc.size} • by {doc.uploadedBy}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-slate-900">{doc.name}</p>
-                            <p className="text-xs text-slate-500">
-                              {doc.type} • {doc.uploadedAt} • {doc.size} • by {doc.uploadedBy}
-                            </p>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" 
+                              className="h-8 w-8 p-0" onClick={() => handleViewDocument(doc)} 
+                              title="View Document">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title="Download Document"
+                              onClick={() => {
+                                try {
+                                  documentsApi.downloadDocument(doc.id);
+                                } catch (err: unknown) {
+                                  showError(err instanceof Error ? err.message : 'Failed to download document');
+                                }
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
+                              title="Delete Document"
+                              onClick={(e) => handleDeleteDocument(e, doc.id, doc.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleViewDocument(doc)} title="View Document">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { showSuccess(`Downloading ${doc.name}`); }} title="Download Document">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-red-600" onClick={(e) => handleDeleteDocument(e, doc.id, doc.name)} title="Delete Document">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-12 text-center text-slate-500">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>No documents uploaded yet.</p>
-                    <Button className="mt-4" onClick={() => fileInputRef.current?.click()}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload First Document
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            )}
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-12 text-center text-slate-500">
+                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                      <p>No documents uploaded yet.</p>
+                      <Button className="mt-4" onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload First Document
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              )}
+
 
             {activeTab === 'timeline' && (
               <div className="relative border-l-2 border-slate-200 ml-3 space-y-8 py-2">
@@ -914,7 +935,15 @@ export default function CaseDetailPage() {
                 <FileText className="h-20 w-20 text-slate-300 mx-auto mb-4" />
                 <p className="text-slate-500 mb-4">Document preview for: {selectedDocument.name}</p>
                 <p className="text-sm text-slate-400 mb-4">In a real application, this would display the PDF or document content.</p>
-                <Button onClick={() => showSuccess(`Downloading ${selectedDocument.name}`)}>
+                <Button
+                  onClick={() => {
+                    try {
+                      documentsApi.downloadDocument(selectedDocument.id);
+                    } catch (err: unknown) {
+                      showError(err instanceof Error ? err.message : 'Failed to download document');
+                    }
+                  }}
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Download to View
                 </Button>
@@ -923,6 +952,7 @@ export default function CaseDetailPage() {
           </div>
         </div>
       )}
+
 
       {/* Update Status Modal */}
       {showStatusModal && (

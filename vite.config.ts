@@ -35,18 +35,31 @@ export default defineConfig({
 
 
   server: {
-  // Allow ngrok/public hosts to access the Vite dev server during demos.
-  // Use `true` to allow all hosts (typed-safe). For safety, replace with an array of exact hostnames, e.g.:
-  // allowedHosts: ['737162775447.ngrok-free.app']
-  allowedHosts: true,
-  proxy: {
+    // Allow ngrok/public hosts to access the Vite dev server during demos.
+    // Use `true` to allow all hosts (typed-safe). For safety, replace with an array of exact hostnames, e.g.:
+    // allowedHosts: ['737162775447.ngrok-free.app']
+      port: 5173, // explicitly set dev server port
+      hmr: {
+        host: 'localhost', // make sure HMR connects to the right host
+        port: 5173,        // explicitly match server port
+  },
+    allowedHosts: true,
+    proxy: {
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       },
+      // Proxy Socket.io connections to the backend
+      '/socket.io': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        ws: true, // Enable WebSocket proxying
+      },
     },
   },
+
 
   build: {
     // Enable CSS code splitting for better caching
@@ -74,9 +87,8 @@ export default defineConfig({
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
           const name = assetInfo.name || ''
-          const info = name.split('.')
-          const ext = info[info.length - 1]
           if (/\.(png|jpe?g|gif|svg|webp|avif)$/i.test(name)) {
+
             return 'assets/images/[name]-[hash][extname]'
           }
           if (/\.(woff2?|eot|ttf|otf)$/i.test(name)) {

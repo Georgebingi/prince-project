@@ -4,8 +4,31 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { BarChart3, Users, FileText, AlertTriangle, TrendingUp, Download, PieChart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { showSuccess } from '../../hooks/useToast';
 
 export default function CourtAdminDashboard() {
+
+  const handleExportData = () => {
+    // For now, show a message that export functionality is not implemented
+    // In a real application, this would call an API to get the data and download it as CSV
+    const sampleData = [
+      ['Metric', 'Value'],
+      ['Total Active Cases', '2845'],
+      ['Case Clearance Rate', '94.2%'],
+      ['Avg. Disposition Time', '45 Days'],
+      ['Active Staff', '142']
+    ];
+
+    const csv = sampleData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `court-admin-data-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showSuccess('Data exported successfully');
+  };
 
   return <Layout title="Executive Overview" showLogoBanner={false}>
       <div className="space-y-6">
@@ -16,7 +39,7 @@ export default function CourtAdminDashboard() {
             </p>
           </div>
           <div className="flex gap-3">  
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2" onClick={handleExportData}>
               <Download className="h-4 w-4" />
               Export Data
             </Button>

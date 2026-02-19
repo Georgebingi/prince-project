@@ -478,7 +478,55 @@ export const documentsApi = {
 
     return data;
   },
+
+/**
+   * Download document by ID
+   */
+  async downloadDocument(documentId: string): Promise<void> {
+    const token = getAuthToken();
+    if (!token) throw new ApiError('Authentication required', 'AUTH_REQUIRED', 401);
+
+    const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      let errorMessage = `Download failed with status ${response.status}`;
+      try {
+        const data = await response.json();
+        errorMessage = data?.error?.message || errorMessage;
+      } catch (jsonError) {
+        console.error('JSON parse error on download failure:', jsonError);
+      }
+      throw new ApiError(errorMessage, 'DOWNLOAD_ERROR', response.status);
+    }
+
+    const disposition = response.headers.get('Content-Disposition');
+    let fileName = 'downloaded-file';
+
+    if (disposition) {
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match?.[1]) fileName = match[1];
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+  },
 };
+
 
 /**
  * Users API

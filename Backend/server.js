@@ -11,32 +11,11 @@ import { Server } from 'socket.io';
 import routes from './src/routes/index.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 import { apiLimiter, authLimiter, caseLimiter, readLimiter } from './src/middleware/rateLimiter.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-
-// Simple in-memory cache for ultra-fast responses
-const cache = new Map();
-const CACHE_TTL = 30 * 1000; // 30 seconds cache
-
-// Cache middleware for GET requests
-function cacheMiddleware(req, res, next) {
-  if (req.method !== 'GET') return next();
-
-  const key = req.originalUrl;
-  const cached = cache.get(key);
-
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return res.json(cached.data);
-  }
-
-  // Override res.json to cache the response
-  const originalJson = res.json;
-  res.json = function(data) {
-    cache.set(key, { data, timestamp: Date.now() });
-    return originalJson.call(this, data);
-  };
-
-  next();
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
@@ -52,15 +31,36 @@ const io = new Server(httpServer, {
 
 const PORT = process.env.PORT || 3000;
 
-// Compression middleware for performance optimization
-app.use(compression());
+// Simple in-memory cache for ultra-fast responses
+const cache = new Map();
+const CACHE_TTL = 30 * 1000; // 30 seconds cache
 
-// Security Middleware
+function cacheMiddleware(req, res, next) {
+  if (req.method !== 'GET') return next();
+
+  const key = req.originalUrl;
+  const cached = cache.get(key);
+
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return res.json(cached.data);
+  }
+
+  const originalJson = res.json;
+  res.json = function(data) {
+    cache.set(key, { data, timestamp: Date.now() });
+    return originalJson.call(this, data);
+  };
+
+  next();
+}
+
+// Middleware
+app.use(compression());
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow eval for development (Vite HMR)
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "http://localhost:3000", "http://localhost:5173", "ws://localhost:3000", "wss://localhost:3000"],
@@ -71,53 +71,49 @@ app.use(helmet({
     },
   },
 }));
-
-// CORS Configuration
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true
 }));
-
-// Rate Limiting - Apply different limits to different endpoints
-app.use('/api/auth/', authLimiter); // Strict limits for auth (10 req/15min)
-app.use('/api/cases/', caseLimiter); // Moderate limits for case operations (50 req/5min)
-app.use('/api/users/lawyers', readLimiter); // Light limits for lawyer list (200 req/min)
-app.use('/api/', apiLimiter); // General API limits (1000 req/15min)
-
-// Body Parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Socket.io connection handling
-const connectedUsers = new Map(); // Map of socketId -> userId
+// Rate Limiting
+app.use('/api/auth/', authLimiter);
+app.use('/api/cases/', caseLimiter);
+app.use('/api/users/lawyers', readLimiter);
+app.use('/api/', apiLimiter);
+
+// Serve documents folder statically
+app.use('/documents', express.static(path.join(__dirname, './public/documents')));
+
+// Note: Download routes are now handled in src/routes/documents.js
+// This ensures proper authentication and file path resolution
+
+// Socket.io setup
+const connectedUsers = new Map();
 
 io.on('connection', (socket) => {
   console.log(`[SOCKET] Client connected: ${socket.id}`);
 
-  // Handle user authentication/identification
   socket.on('authenticate', (userId) => {
     connectedUsers.set(socket.id, userId);
     socket.join(`user:${userId}`);
     console.log(`[SOCKET] User ${userId} authenticated on socket ${socket.id}`);
   });
 
-  // Handle joining case-specific rooms
   socket.on('join:case', (caseId) => {
     socket.join(`case:${caseId}`);
     console.log(`[SOCKET] Socket ${socket.id} joined case room: ${caseId}`);
   });
 
-  // Handle leaving case-specific rooms
   socket.on('leave:case', (caseId) => {
     socket.leave(`case:${caseId}`);
     console.log(`[SOCKET] Socket ${socket.id} left case room: ${caseId}`);
   });
 
-  // Handle chat messages
   socket.on('chat:send', (data) => {
     const { receiverId, message, senderId, senderName } = data;
-    
-    // Emit to receiver's personal room
     io.to(`user:${receiverId}`).emit('chat:receive', {
       id: `msg-${Date.now()}`,
       senderId,
@@ -126,55 +122,37 @@ io.on('connection', (socket) => {
       timestamp: new Date().toISOString(),
       read: false
     });
-    
     console.log(`[SOCKET] Chat message sent from ${senderId} to ${receiverId}`);
   });
 
-  // Handle chat message read status
   socket.on('chat:read', (data) => {
     const { senderId, receiverId } = data;
-    io.to(`user:${senderId}`).emit('chat:read:confirm', {
-      userId: receiverId
-    });
+    io.to(`user:${senderId}`).emit('chat:read:confirm', { userId: receiverId });
   });
 
-  // Handle notifications
   socket.on('notification:send', (data) => {
     const { recipientId, notification } = data;
     io.to(`user:${recipientId}`).emit('notification:receive', notification);
     console.log(`[SOCKET] Notification sent to user ${recipientId}`);
   });
 
-  // Handle case updates
   socket.on('case:update', (data) => {
     const { caseId, update, assignedUserId } = data;
-    
-    // Broadcast to case room
     io.to(`case:${caseId}`).emit('case:updated', update);
-    
-    // Also send to specific user if assigned
-    if (assignedUserId) {
-      io.to(`user:${assignedUserId}`).emit('case:updated', update);
-    }
-    
+    if (assignedUserId) io.to(`user:${assignedUserId}`).emit('case:updated', update);
     console.log(`[SOCKET] Case ${caseId} update broadcasted`);
   });
 
-  // Handle disconnection
   socket.on('disconnect', () => {
     const userId = connectedUsers.get(socket.id);
-    if (userId) {
-      connectedUsers.delete(socket.id);
-      console.log(`[SOCKET] User ${userId} disconnected`);
-    }
+    if (userId) connectedUsers.delete(socket.id);
     console.log(`[SOCKET] Client disconnected: ${socket.id}`);
   });
 });
 
-// Make io accessible to routes
 app.set('io', io);
 
-// Health Check
+// Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -184,7 +162,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Root: clarify this is the API server (frontend runs on Vite port, e.g. 5173)
+// Root info
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -195,26 +173,61 @@ app.get('/', (req, res) => {
   });
 });
 
-// API Routes with caching for ultra-fast responses
+// API Routes with caching
 app.use('/api', cacheMiddleware, routes);
 
-// 404 Handler
+// 404 handler
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      code: 'NOT_FOUND',
-      message: 'Route not found'
-    }
-  });
+  res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Route not found' } });
 });
 
-// Error Handler - use the middleware
+// Error handler
 app.use(errorHandler);
 
-// Start Server with Socket.io
+// Function to list all registered routes
+function listRoutes(app) {
+  const routes = [];
+  
+  function printStack(stack, basePath = '') {
+    stack.forEach((layer) => {
+      if (layer.route) {
+        // Routes registered directly on the app
+        const path = basePath + layer.route.path;
+        const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
+        routes.push({ path, methods });
+      } else if (layer.name === 'router' && layer.handle && layer.handle.stack) {
+        // Router middleware - get the mount path from regexp
+        let mountPath = basePath;
+        if (layer.regexp) {
+          const match = layer.regexp.toString().match(/^\/\^\\\/(.*?)\\\/\?\(\?=.*\)\$\/$/);
+          if (match) {
+            mountPath = basePath + '/' + match[1].replace(/\\\//g, '/');
+          }
+        }
+        printStack(layer.handle.stack, mountPath);
+      }
+    });
+  }
+  
+  if (app._router && app._router.stack) {
+    printStack(app._router.stack);
+  }
+  
+  return routes;
+}
+
+
+// Start server
 httpServer.listen(PORT, () => {
   console.log(`[SERVER] Server running on http://localhost:${PORT}`);
   console.log(`[SOCKET] Socket.io server running on ws://localhost:${PORT}`);
   console.log(`[ENV] Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // List all registered routes for debugging
+  console.log('\n[ROUTES] Registered API Routes:');
+  const routes = listRoutes(app);
+  routes.forEach(route => {
+    console.log(`  ${route.methods.padEnd(6)} ${route.path}`);
+  });
+  console.log(`[ROUTES] Total routes: ${routes.length}\n`);
 });
