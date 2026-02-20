@@ -1,44 +1,51 @@
 import { io, Socket } from 'socket.io-client';
 import { getAuthToken } from './api';
 
-// Socket.io server URL - explicitly use backend port 3000
-// In development, the backend runs on port 3000
-// In production, set VITE_SOCKET_URL to your production server URL
+// Socket.io server URL configuration
+// In development: Use the Vite proxy path (/socket.io) which forwards to backend
+// In production: Set VITE_SOCKET_URL to your production server URL (e.g., https://api.example.com)
 const envUrl = import.meta.env.VITE_SOCKET_URL;
-const SOCKET_URL = (envUrl && envUrl.trim()) ? envUrl.trim() : 'http://localhost:3000';
+
+// Use direct backend URL in development (proxy doesn't work well with WebSocket)
+// In production: Set VITE_SOCKET_URL to your production server URL
+const isDevelopment = import.meta.env.DEV;
+const SOCKET_URL = (envUrl && envUrl.trim()) 
+  ? envUrl.trim() 
+  : (isDevelopment ? 'http://localhost:3000' : 'http://localhost:3000');
 
 // Log the URL being used for debugging
 console.log('[SOCKET] Using server URL:', SOCKET_URL);
 
 let socket: Socket | null = null;
+let isConnecting = false;
 
 /**
  * Get or create the socket connection
  */
 export function getSocket(): Socket {
-  if (!socket) {
+  if (!socket && !isConnecting) {
     // Ensure we're using the correct URL
     const connectionUrl = SOCKET_URL;
+    isConnecting = true;
     
     socket = io(connectionUrl, {
       auth: {
         token: getAuthToken() || ''
       },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 2000,
+      timeout: 10000,
       // Force new connection to avoid using cached connections
       forceNew: true,
-      // Disable auto-connect to handle it manually
-      autoConnect: true
     });
 
 
     // Event handlers
     socket.on('connect', () => {
       console.log('[SOCKET] Connected to server at', connectionUrl);
+      isConnecting = false;
     });
 
     socket.on('disconnect', (reason) => {
@@ -46,8 +53,10 @@ export function getSocket(): Socket {
     });
 
     socket.on('connect_error', (error: Error) => {
-      console.error('[SOCKET] Connection error:', error.message);
-      console.error('[SOCKET] Attempted URL:', connectionUrl);
+      isConnecting = false;
+      // Only log meaningful errors, not repeated connection failures
+      if (socket?.connected) return;
+      console.log('[SOCKET] Unable to connect to server. Backend may not be running.', error.message);
     });
 
 
@@ -56,11 +65,11 @@ export function getSocket(): Socket {
     });
 
     socket.on('reconnect_failed', () => {
-      console.error('[SOCKET] Reconnection failed');
+      console.log('[SOCKET] Reconnection failed. Backend may not be running.');
     });
   }
 
-  return socket;
+  return socket as Socket;
 }
 
 export function authenticateSocket(userId: string): void {

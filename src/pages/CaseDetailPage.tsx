@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
@@ -6,18 +6,18 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
-  FileText, 
-  User, 
-  Gavel, 
-  Download, 
-  MessageSquare, 
-  Upload, 
-  X, 
-  Eye, 
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  FileText,
+  User,
+  Gavel,
+  Download,
+  MessageSquare,
+  Upload,
+  X,
+  Eye,
   Trash2,
   Building2,
   UserCircle,
@@ -32,7 +32,9 @@ import { EditCaseModal } from '../components/EditCaseModal';
 import { casesApi, documentsApi } from '../services/api';
 import { showSuccess, showError } from '../hooks/useToast';
 import { handleApiError } from '../utils/errorHandler';
+import { renderAsync } from 'docx-preview';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 function mapBackendDocToFrontend(d: { id: number; name: string; type: string; file_size?: number; uploaded_at?: string; uploaded_by_name?: string }): CaseDocument {
   return {
@@ -59,14 +61,14 @@ interface TimelineEvent {
 }
 
 export default function CaseDetailPage() {
-
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { getCaseById, addDocumentToCase, removeDocumentFromCase, updateCaseStatus, scheduleHearing, addNoteToCase, refresh, deleteCase } = useCases();
+  const { getCaseById, addDocumentToCase, updateCaseStatus, scheduleHearing, addNoteToCase, refresh, deleteCase } = useCases();
   const { user } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const docxContainerRef = useRef<HTMLDivElement>(null);
   const shouldOpenDocuments = location.state?.openDocuments === true;
   type TabId = 'overview' | 'documents' | 'timeline' | 'notes';
   const [activeTab, setActiveTab] = useState<TabId>(shouldOpenDocuments ? 'documents' : 'overview');
@@ -75,7 +77,7 @@ export default function CaseDetailPage() {
   const [caseDetailFromApi, setCaseDetailFromApi] = useState<Case | null>(null);
   const [caseNumericId, setCaseNumericId] = useState<number | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
-  
+
   // Modal States
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showHearingModal, setShowHearingModal] = useState(false);
@@ -83,27 +85,25 @@ export default function CaseDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Form States
   const [newStatus, setNewStatus] = useState('');
   const [hearingDate, setHearingDate] = useState('');
   const [noteText, setNoteText] = useState('');
-  
+
   // Party information from backend
   const [plaintiffInfo, setPlaintiffInfo] = useState<PartyInfo | null>(null);
   const [defendantInfo, setDefendantInfo] = useState<PartyInfo | null>(null);
   const [partyCategory, setPartyCategory] = useState<Case['partyCategory'] | null>(null);
 
-
-  
   // Notes from backend
   const [notesFromApi, setNotesFromApi] = useState<CaseNote[]>([]);
-  
+
   // Timeline from backend
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
 
   const decodedId = id ? decodeURIComponent(id) : '';
-  
+
   // Check if user can delete cases (Chief Judge, Admin, or Court Admin)
   const canDeleteCases = user?.role === 'judge' || user?.role === 'admin' || user?.role === 'court_admin';
 
@@ -151,13 +151,12 @@ export default function CaseDetailPage() {
           notes?: Array<{ id?: number; content?: string; text?: string; created_at?: string; author_name?: string; author?: string }>;
         };
         setCaseNumericId(d.id);
-        
+
         // Extract party information
         if (d.parties && d.parties.length > 0) {
           const plaintiff = d.parties.find((p: { role?: string; name?: string; phone?: string; address?: string }) => p.role?.toLowerCase() === 'plaintiff');
           const defendant = d.parties.find((p: { role?: string; name?: string; phone?: string; address?: string }) => p.role?.toLowerCase() === 'defendant');
 
-          
           if (plaintiff) {
             setPlaintiffInfo({
               name: plaintiff.name || '',
@@ -165,7 +164,7 @@ export default function CaseDetailPage() {
               address: plaintiff.address || ''
             });
           }
-          
+
           if (defendant) {
             setDefendantInfo({
               name: defendant.name || '',
@@ -173,9 +172,8 @@ export default function CaseDetailPage() {
               address: defendant.address || ''
             });
           }
-          
-          setPartyCategory((d.party_category as Case['partyCategory']) || null);
 
+          setPartyCategory((d.party_category as Case['partyCategory']) || null);
         }
 
         // Map notes from API response
@@ -185,7 +183,7 @@ export default function CaseDetailPage() {
           createdAt: n.created_at ? new Date(n.created_at).toLocaleDateString() : '',
           author: n.author_name || n.author || 'Unknown'
         })) ?? [];
-        
+
         if (mappedNotes.length > 0) {
           setNotesFromApi(mappedNotes);
         }
@@ -207,7 +205,6 @@ export default function CaseDetailPage() {
           documents: (d.documents ?? []).map(mapBackendDocToFrontend),
           notes: mappedNotes,
           partyCategory: (d.party_category as Case['partyCategory']) || undefined
-
         });
       }
     } catch {
@@ -218,26 +215,20 @@ export default function CaseDetailPage() {
     }
   }, [decodedId]);
 
-
-  // Notes are now fetched as part of fetchCaseDetail to avoid circular dependencies
-
-
   // Fetch timeline from backend
   const fetchTimeline = useCallback(async () => {
     if (!caseNumericId) return;
     try {
       const res = await casesApi.getCaseById(decodedId);
       if (res.success && res.data) {
-        const d = res.data as { 
+        const d = res.data as {
           timeline?: Array<{ date?: string; title?: string; description?: string; type?: string }>;
           updated_at?: string;
           filed_date?: string;
           judge_name?: string;
         };
         if (d.timeline && Array.isArray(d.timeline)) {
-
           const mappedTimeline: TimelineEvent[] = d.timeline.map((t: { date?: string; title?: string; description?: string; type?: string }) => ({
-
             date: t.date ? new Date(t.date).toLocaleDateString() : 'Recent',
             title: t.title || 'Case Updated',
             description: t.description || '',
@@ -245,7 +236,6 @@ export default function CaseDetailPage() {
           }));
           setTimeline(mappedTimeline);
         } else {
-          // Create default timeline from case data
           const defaultTimeline: TimelineEvent[] = [];
           if (d.updated_at) {
             defaultTimeline.push({
@@ -268,7 +258,6 @@ export default function CaseDetailPage() {
       }
     } catch (err) {
       console.error('Failed to fetch timeline:', err);
-      // Set default timeline on error
       if (caseDetailFromApi) {
         setTimeline([
           {
@@ -298,7 +287,6 @@ export default function CaseDetailPage() {
     }
   }, [caseNumericId, fetchTimeline]);
 
-
   useEffect(() => {
     if (shouldOpenDocuments) setActiveTab('documents');
   }, [shouldOpenDocuments]);
@@ -321,8 +309,8 @@ export default function CaseDetailPage() {
         await fetchCaseDetail();
         await refresh();
         showSuccess(fileList.length === 1 ? 'Document uploaded successfully!' : `${fileList.length} documents uploaded successfully!`);
-      } catch (err) {
-        handleApiError(err, 'Document Upload');
+      } catch (_err) {
+        handleApiError(_err, 'Document Upload');
       } finally {
         setUploading(false);
       }
@@ -349,11 +337,16 @@ export default function CaseDetailPage() {
     setSelectedDocument(doc);
   };
 
-  const handleDeleteDocument = (e: React.MouseEvent, docId: string, docName: string) => {
+  const handleDeleteDocument = async (e: React.MouseEvent, docId: string, docName: string) => {
     e.stopPropagation();
     if (window.confirm(`Are you sure you want to delete "${docName}"? This action cannot be undone.`)) {
-      removeDocumentFromCase(decodedId, docId);
-      fetchCaseDetail();
+      try {
+        await documentsApi.deleteDocument(docId);
+        await fetchCaseDetail();
+        showSuccess(`Document "${docName}" deleted successfully!`);
+      } catch (err) {
+        handleApiError(err, 'Delete Document');
+      }
     }
   };
 
@@ -371,7 +364,6 @@ export default function CaseDetailPage() {
     showSuccess('Case details exported successfully!');
   };
 
-
   const handleUpdateStatus = async () => {
     if (newStatus) {
       try {
@@ -381,7 +373,7 @@ export default function CaseDetailPage() {
         setShowStatusModal(false);
         setNewStatus('');
         showSuccess('Case status updated!');
-      } catch (err) {
+      } catch {
         updateCaseStatus(decodedId, newStatus);
         setShowStatusModal(false);
         setNewStatus('');
@@ -400,7 +392,7 @@ export default function CaseDetailPage() {
         setShowHearingModal(false);
         setHearingDate('');
         showSuccess('Hearing scheduled successfully!');
-      } catch (err) {
+      } catch {
         scheduleHearing(decodedId, hearingDate);
         setShowHearingModal(false);
         setHearingDate('');
@@ -491,9 +483,9 @@ export default function CaseDetailPage() {
             Export
           </Button>
           {canDeleteCases && (
-            <Button 
-              size="sm" 
-              variant="danger" 
+            <Button
+              size="sm"
+              variant="danger"
               onClick={handleDeleteClick}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
@@ -567,11 +559,9 @@ export default function CaseDetailPage() {
           </div>
         </Card>
 
-
-        {/* Party Information Cards - shown when party category exists */}
+        {/* Party Information Cards */}
         {(partyCategory || plaintiffInfo || defendantInfo) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Plaintiff Side */}
             <Card className={plaintiffInfo ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-slate-700'}>
               <div className="flex items-center gap-2 mb-3">
                 {plaintiffInfo ? (
@@ -603,7 +593,6 @@ export default function CaseDetailPage() {
               )}
             </Card>
 
-            {/* Defendant Side */}
             <Card className={defendantInfo ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-slate-700'}>
               <div className="flex items-center gap-2 mb-3">
                 {defendantInfo ? (
@@ -650,7 +639,6 @@ export default function CaseDetailPage() {
                 }`}
               >
                 {tab} {tab === 'Documents' && `(${caseData?.documents?.length ?? 0})`}
-
                 {activeTab === tab.toLowerCase() && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full"></div>
                 )}
@@ -661,7 +649,6 @@ export default function CaseDetailPage() {
 
         {/* Tab Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
             {activeTab === 'overview' && (
               <>
@@ -721,92 +708,89 @@ export default function CaseDetailPage() {
               </>
             )}
 
-
-            {/* Documents Tab */}
-              {activeTab === 'documents' && (
-                <Card noPadding>
-                  <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                    <h3 className="font-semibold text-slate-900">Case Documents</h3>
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" onClick={() => fileInputRef.current?.click()} isLoading={uploading} title="Upload Document">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Document
-                      </Button>
-                      <input
-                        ref={fileInputRef}
-                        id="case-document-upload"
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.jpg,.png"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                        aria-label="Upload case document"
-                      />
-                    </div>
+            {activeTab === 'documents' && (
+              <Card noPadding>
+                <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                  <h3 className="font-semibold text-slate-900">Case Documents</h3>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={() => fileInputRef.current?.click()} isLoading={uploading} title="Upload Document">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Document
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      id="case-document-upload"
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.jpg,.png"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                      aria-label="Upload case document"
+                    />
                   </div>
+                </div>
 
-                  {(caseData?.documents?.length ?? 0) > 0 ? (
-                    <div className="divide-y divide-slate-100">
-                      {caseData.documents.map((doc) => (
-                        <div key={doc.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-red-50 text-red-600 rounded">
-                              <FileText className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-slate-900">{doc.name}</p>
-                              <p className="text-xs text-slate-500">
-                                {doc.type} • {doc.uploadedAt} • {doc.size} • by {doc.uploadedBy}
-                              </p>
-                            </div>
+                {(caseData?.documents?.length ?? 0) > 0 ? (
+                  <div className="divide-y divide-slate-100">
+                    {caseData.documents.map((doc) => (
+                      <div key={doc.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-red-50 text-red-600 rounded">
+                            <FileText className="h-5 w-5" />
                           </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" 
-                              className="h-8 w-8 p-0" onClick={() => handleViewDocument(doc)} 
-                              title="View Document">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              title="Download Document"
-                              onClick={() => {
-                                try {
-                                  documentsApi.downloadDocument(doc.id);
-                                } catch (err: unknown) {
-                                  showError(err instanceof Error ? err.message : 'Failed to download document');
-                                }
-                              }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
-                              title="Delete Document"
-                              onClick={(e) => handleDeleteDocument(e, doc.id, doc.name)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          <div>
+                            <p className="font-medium text-slate-900">{doc.name}</p>
+                            <p className="text-xs text-slate-500">
+                              {doc.type} • {doc.uploadedAt} • {doc.size} • by {doc.uploadedBy}
+                            </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-12 text-center text-slate-500">
-                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                      <p>No documents uploaded yet.</p>
-                      <Button className="mt-4" onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload First Document
-                      </Button>
-                    </div>
-                  )}
-                </Card>
-              )}
-
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm"
+                            className="h-8 w-8 p-0" onClick={() => handleViewDocument(doc)}
+                            title="View Document">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Download Document"
+                            onClick={() => {
+                              try {
+                                documentsApi.downloadDocument(doc.id);
+                              } catch {
+                                showError('Failed to download document');
+                              }
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
+                            title="Delete Document"
+                            onClick={(e) => handleDeleteDocument(e, doc.id, doc.name)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center text-slate-500">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                    <p>No documents uploaded yet.</p>
+                    <Button className="mt-4" onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload First Document
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            )}
 
             {activeTab === 'timeline' && (
               <div className="relative border-l-2 border-slate-200 ml-3 space-y-8 py-2">
@@ -911,7 +895,6 @@ export default function CaseDetailPage() {
                   </Badge>
                 </div>
               </div>
-
             </Card>
           </div>
         </div>
@@ -920,39 +903,25 @@ export default function CaseDetailPage() {
       {/* Document Viewer Modal */}
       {selectedDocument && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                <FileText className="h-5 w-5 text-slate-400" />
-                {selectedDocument.name}
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2 flex-1 min-w-0">
+                <FileText className="h-5 w-5 text-slate-400 flex-shrink-0" />
+                <span className="truncate">{selectedDocument.name}</span>
               </h3>
-              <button type="button" onClick={() => setSelectedDocument(null)} className="p-1 hover:bg-slate-100 rounded-full" aria-label="Close document preview">
+              <button type="button" onClick={() => setSelectedDocument(null)} className="p-1 hover:bg-slate-100 rounded-full flex-shrink-0 ml-2" aria-label="Close document preview">
                 <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
-            <div className="p-8 bg-slate-50 min-h-[500px] flex items-center justify-center">
-              <div className="text-center">
-                <FileText className="h-20 w-20 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500 mb-4">Document preview for: {selectedDocument.name}</p>
-                <p className="text-sm text-slate-400 mb-4">In a real application, this would display the PDF or document content.</p>
-                <Button
-                  onClick={() => {
-                    try {
-                      documentsApi.downloadDocument(selectedDocument.id);
-                    } catch (err: unknown) {
-                      showError(err instanceof Error ? err.message : 'Failed to download document');
-                    }
-                  }}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download to View
-                </Button>
-              </div>
+            <div className="flex-1 overflow-auto bg-slate-50">
+              <DocxPreviewComponent
+                document={selectedDocument}
+                containerRef={docxContainerRef}
+              />
             </div>
           </div>
         </div>
       )}
-
 
       {/* Update Status Modal */}
       {showStatusModal && (
@@ -1027,7 +996,6 @@ export default function CaseDetailPage() {
         />
       )}
 
-
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -1058,4 +1026,123 @@ export default function CaseDetailPage() {
       )}
     </Layout>
   );
+}
+
+// Separate component for DOCX preview
+function DocxPreviewComponent({ document, containerRef }: { document: CaseDocument; containerRef: React.RefObject<HTMLDivElement> }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Store container ref value in a state to avoid dependency issues
+  const [containerElement, setContainerElement] = useState<HTMLDivElement | null>(null);
+
+  // Update container element when ref changes
+  useEffect(() => {
+    if (containerRef.current) {
+      setContainerElement(containerRef.current);
+    }
+  }, [containerRef]);
+
+  const fileName = document.name.toLowerCase();
+  const isPdf = fileName.endsWith('.pdf');
+  const isImage = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+  const isDocx = fileName.endsWith('.docx');
+
+  const renderDocxPreview = useCallback(async () => {
+    if (!containerElement) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/${document.id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
+
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+
+      if (containerElement) {
+        containerElement.innerHTML = '';
+        await renderAsync(arrayBuffer, containerElement);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load document');
+      console.error('DOCX render error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [document.id, containerElement]);
+
+  useEffect(() => {
+    if (isDocx && containerElement) {
+      renderDocxPreview();
+    }
+  }, [isDocx, renderDocxPreview, containerElement]);
+
+  if (isPdf) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <iframe
+          src={`${API_BASE_URL}/documents/${document.id}/download`}
+          className="w-full h-full"
+          title={document.name}
+        />
+      </div>
+    );
+  } else if (isImage) {
+    return (
+      <div className="w-full h-full flex items-center justify-center p-4">
+        <img
+          src={`${API_BASE_URL}/documents/${document.id}/download`}
+          alt={document.name}
+          className="max-w-full max-h-full object-contain"
+        />
+      </div>
+    );
+  } else if (isDocx) {
+    return (
+      <div className="w-full">
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-slate-600">Loading document preview...</div>
+          </div>
+        )}
+        {error && (
+          <div className="p-8 flex flex-col items-center justify-center min-h-[500px]">
+            <FileText className="h-20 w-20 text-slate-300 mb-4" />
+            <p className="text-slate-600 mb-2 font-medium text-center">Preview Error</p>
+            <p className="text-sm text-slate-500 mb-6 text-center max-w-sm">{error}</p>
+            <Button onClick={() => documentsApi.downloadDocument(document.id)}>
+              <Download className="h-4 w-4 mr-2" />
+              Download to View
+            </Button>
+          </div>
+        )}
+        <div ref={containerRef} className="p-8 docx-preview-container" />
+      </div>
+    );
+  } else {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center min-h-[500px]">
+        <FileText className="h-20 w-20 text-slate-300 mb-4" />
+        <p className="text-slate-600 mb-2 font-medium text-center">Preview not available</p>
+        <p className="text-sm text-slate-500 mb-6 text-center max-w-sm">
+          This file type cannot be previewed in the browser.
+          <br />
+          Please download to view the full content.
+        </p>
+        <Button onClick={() => documentsApi.downloadDocument(document.id)}>
+          <Download className="h-4 w-4 mr-2" />
+          Download to View
+        </Button>
+      </div>
+    );
+  }
 }

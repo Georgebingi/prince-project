@@ -459,24 +459,62 @@ export const documentsApi = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/documents/upload`, {
-      method: 'POST',
-      headers,
-      body: formData,
-      credentials: 'include',
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+        method: 'POST',
+        headers,
+        body: formData,
+        credentials: 'include',
+      });
 
-    const data = await response.json();
+      // Try to parse response as JSON
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          console.error('Failed to parse JSON response:', jsonError);
+          const text = await response.text();
+          console.error('Response text:', text);
+          throw new ApiError(
+            'Invalid response from server',
+            'PARSE_ERROR',
+            response.status
+          );
+        }
+      } else {
+        // Non-JSON response
+        const text = await response.text();
+        console.error('Non-JSON response from upload endpoint:', text);
+        throw new ApiError(
+          `Server error: ${text || 'Unknown error'}`,
+          'INVALID_RESPONSE',
+          response.status
+        );
+      }
 
-    if (!response.ok) {
+      if (!response.ok) {
+        throw new ApiError(
+          data.error?.message || 'Upload failed',
+          data.error?.code || 'UPLOAD_ERROR',
+          response.status
+        );
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      console.error('Upload fetch error:', error);
       throw new ApiError(
-        data.error?.message || 'Upload failed',
-        data.error?.code || 'UPLOAD_ERROR',
-        response.status
+        error instanceof Error ? error.message : 'Upload failed - network error',
+        'UPLOAD_ERROR',
+        0
       );
     }
-
-    return data;
   },
 
 /**
@@ -524,6 +562,26 @@ export const documentsApi = {
     a.remove();
 
     window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Delete document by ID
+   */
+  async deleteDocument(documentId: string): Promise<void> {
+    await request(`/documents/${documentId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Get document preview/content URL
+   */
+  async getDocumentPreviewUrl(documentId: string): Promise<string> {
+    const token = getAuthToken();
+    if (!token) throw new ApiError('Authentication required', 'AUTH_REQUIRED', 401);
+
+    // Return the preview URL - the frontend will use this to display the document
+    return `${API_BASE_URL}/documents/${documentId}/download`;
   },
 };
 
@@ -1077,4 +1135,4 @@ export const chatApi = {
   },
 };
 
-export { ApiError, getAuthToken, removeAuthToken, saveRefreshToken };
+export { ApiError, getAuthToken, removeAuthToken, saveAuthToken, saveRefreshToken };

@@ -144,22 +144,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 /**
- * withErrorBoundary HOC - Wrap component with error boundary
- */
-export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
-) {
-  return function WithErrorBoundary(props: P) {
-    return (
-      <ErrorBoundary {...errorBoundaryProps}>
-        <Component {...props} />
-      </ErrorBoundary>
-    );
-  };
-}
-
-/**
  * AsyncErrorBoundary - For handling async errors
  */
 interface AsyncErrorBoundaryProps extends ErrorBoundaryProps {
@@ -222,23 +206,5 @@ export class AsyncErrorBoundary extends Component<AsyncErrorBoundaryProps, Error
         {this.props.children}
       </React.Suspense>
     );
-  }
-}
-
-/**
- * SafeRender - Wrapper that catches errors in render
- */
-export function SafeRender({
-  children,
-  placeholder = null,
-}: {
-  children: ReactNode;
-  placeholder?: ReactNode;
-}) {
-  try {
-    return <>{children}</>;
-  } catch (error) {
-    console.error('[SafeRender] Render error:', error);
-    return <>{placeholder}</>;
   }
 }

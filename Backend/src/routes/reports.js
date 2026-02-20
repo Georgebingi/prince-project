@@ -186,8 +186,10 @@ router.get('/audit-logs', authorizeRole('admin', 'registrar', 'auditor'), async 
         al.resource_id,
         al.ip_address,
         al.user_agent,
-        al.details
+        al.details,
+        u.role as user_role
       FROM audit_logs al
+      LEFT JOIN users u ON al.user_id = u.id
       WHERE 1=1
     `;
     const params = [];

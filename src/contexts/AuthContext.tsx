@@ -1,5 +1,5 @@
-import { useEffect, useState, createContext, useContext, type ReactNode } from 'react';
-import { removeAuthToken, authApi, usersApi, saveRefreshToken } from '../services/api';
+import { useEffect, useState, createContext, useContext, useCallback, type ReactNode } from 'react';
+import { removeAuthToken, authApi, usersApi, saveRefreshToken, saveAuthToken } from '../services/api';
 
 export type UserRole =
   'judge' |
@@ -26,18 +26,22 @@ interface AuthContextType {
   isLoading: boolean;
   login: (role: UserRole) => void;
   /** Set user from backend login response (stores token via api; call after authApi.login success). */
-  loginFromApi: (apiUser: { id?: string | number; name: string; email?: string; role: string; department?: string; staffId?: string; staff_id?: string }) => void;
+  loginFromApi: (apiUser: { id?: string | number; name: string; email?: string; role: string; department?: string; staffId?: string; staff_id?: string }, refreshToken?: string, token?: string) => void;
   logout: () => void | Promise<void>;
   refreshAuth: () => Promise<void>;
 }
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     // Initialize from localStorage
     const savedUser = localStorage.getItem('court_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
+  
   const [isLoading, setIsLoading] = useState(true);
+
   // Save to localStorage whenever user changes
   useEffect(() => {
     if (user) {
@@ -47,72 +51,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  // On app load, attempt to refresh token if user and refresh token exist
-  useEffect(() => {
-    const initializeAuth = async () => {
-      const savedUser = localStorage.getItem('court_user');
-      const refreshToken = localStorage.getItem('refresh_token');
-
-      if (savedUser && refreshToken) {
-        try {
-          const refreshResponse = await authApi.refresh();
-          if (refreshResponse.success && refreshResponse.user) {
-            loginFromApi(refreshResponse.user, refreshResponse.refreshToken);
-          }
-        } catch (error) {
-          console.warn('Token refresh failed, clearing session:', error);
-          // Clear invalid session data
-          removeAuthToken();
-          localStorage.removeItem('court_user');
-          localStorage.removeItem('court_last_route');
-          setUser(null);
-        }
-      } else if (savedUser) {
-        // User exists but no refresh token - keep cached data for offline mode
-        console.log('No refresh token available, keeping cached user data');
-        // Parse and set the cached user data
-        try {
-          const userData = JSON.parse(savedUser);
-          setUser(userData);
-        } catch (parseError) {
-          console.warn('Failed to parse cached user data:', parseError);
-          localStorage.removeItem('court_user');
-        }
-      }
-      setIsLoading(false);
-    };
-
-    initializeAuth();
-  }, []);
-
-  // Periodic user info update
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const updateUserInfo = async () => {
-      try {
-        const profileResponse = await usersApi.getProfile();
-        if (profileResponse.success && profileResponse.data && typeof profileResponse.data === 'object' && profileResponse.data !== null && !Array.isArray(profileResponse.data)) {
-          const userData = profileResponse.data as { [key: string]: unknown };
-          setUser(prev => {
-            if (!prev) return null;
-            return { ...prev, ...userData };
-          });
-        }
-      } catch (error) {
-        console.warn('Failed to update user info:', error);
-      }
-    };
-
-    // Update immediately and then every 5 minutes
-    updateUserInfo();
-    const interval = setInterval(updateUserInfo, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [user?.id]);
-  const loginFromApi = (apiUser: { id?: string | number; name: string; email?: string; role: string; department?: string; staffId?: string; staff_id?: string }, refreshToken?: string) => {
+  // loginFromApi function - must be defined before useEffect that uses it
+  const loginFromApi = useCallback((
+    apiUser: { id?: string | number; name: string; email?: string; role: string; department?: string; staffId?: string; staff_id?: string },
+    refreshToken?: string,
+    token?: string
+  ) => {
     const role = apiUser.role as UserRole;
     const staffId = apiUser.staffId ?? apiUser.staff_id ?? '';
+
     setUser({
       id: apiUser.id,
       name: apiUser.name,
@@ -121,29 +68,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       department: apiUser.department,
       email: apiUser.email,
     });
+
+    // Save the main JWT token
+    if (token) {
+      saveAuthToken(token);
+    }
+
+    // Save the refresh token
     if (refreshToken) {
       saveRefreshToken(refreshToken);
     }
-    setIsLoading(false);
-  };
 
-  const refreshAuth = async () => {
+    setIsLoading(false);
+  }, []);
+
+// Refresh auth function
+  const refreshAuth = useCallback(async () => {
     try {
       const refreshResponse = await authApi.refresh();
       if (refreshResponse.success && refreshResponse.user) {
-        loginFromApi(refreshResponse.user, refreshResponse.refreshToken);
+        loginFromApi(refreshResponse.user, refreshResponse.refreshToken, refreshResponse.token);
         return;
       }
       throw new Error('Refresh failed');
     } catch (error) {
       console.warn('Auth refresh failed:', error);
-      // Clear invalid session
-      logout();
+      // Clear invalid session - use removeAuthToken directly to avoid circular dependency
+      removeAuthToken();
+      setUser(null);
+      localStorage.removeItem('court_user');
+      localStorage.removeItem('court_last_route');
       throw error;
     }
-  };
+  }, [loginFromApi]);
 
-  const login = (role: UserRole) => {
+  // Logout function
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.warn('Logout API call failed:', error);
+    } finally {
+      // Always clear local state
+      removeAuthToken();
+      setUser(null);
+      localStorage.removeItem('court_user');
+      localStorage.removeItem('court_last_route');
+    }
+  }, []);
+
+  // Mock login function (for development without backend)
+  const login = useCallback((role: UserRole) => {
     // Mock user data (used when backend is not used)
     const userData: Record<UserRole, User> = {
       judge: {
@@ -218,21 +193,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('refresh_token', `mock_refresh_${role}_${Date.now()}`);
 
     setIsLoading(false);
-  };
+  }, []);
 
-  const logout = async () => {
-    try {
-      await authApi.logout();
-    } catch (error) {
-      console.warn('Logout API call failed:', error);
-    } finally {
-      // Always clear local state
-      removeAuthToken();
-      setUser(null);
-      localStorage.removeItem('court_user');
-      localStorage.removeItem('court_last_route');
-    }
-  };
+  // On app load, attempt to refresh token if user and refresh token exist
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const savedUser = localStorage.getItem('court_user');
+      const refreshToken = localStorage.getItem('refresh_token');
+
+      if (savedUser && refreshToken) {
+        try {
+          const refreshResponse = await authApi.refresh();
+          if (refreshResponse.success && refreshResponse.user) {
+            loginFromApi(refreshResponse.user, refreshResponse.refreshToken, refreshResponse.token);
+          }
+        } catch (error) {
+          console.warn('Token refresh failed, clearing session:', error);
+          // Clear invalid session data
+          removeAuthToken();
+          localStorage.removeItem('court_user');
+          localStorage.removeItem('court_last_route');
+          setUser(null);
+        }
+      } else if (savedUser) {
+        // User exists but no refresh token - keep cached data for offline mode
+        console.log('No refresh token available, keeping cached user data');
+        // Parse and set the cached user data
+        try {
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+        } catch (parseError) {
+          console.warn('Failed to parse cached user data:', parseError);
+          localStorage.removeItem('court_user');
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
+  }, [loginFromApi]);
+
+  // Periodic user info update
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const updateUserInfo = async () => {
+      try {
+        const profileResponse = await usersApi.getProfile();
+        if (profileResponse.success && profileResponse.data && typeof profileResponse.data === 'object' && profileResponse.data !== null && !Array.isArray(profileResponse.data)) {
+          const userData = profileResponse.data as { [key: string]: unknown };
+          setUser(prev => {
+            if (!prev) return null;
+            return { ...prev, ...userData };
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to update user info:', error);
+      }
+    };
+
+    // Update immediately and then every 5 minutes
+    updateUserInfo();
+    const interval = setInterval(updateUserInfo, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   return (
     <AuthContext.Provider
@@ -244,14 +269,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         refreshAuth,
       }}>
-
       {children}
-    </AuthContext.Provider>);
-
+    </AuthContext.Provider>
+  );
 }
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
-
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

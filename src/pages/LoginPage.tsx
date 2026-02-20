@@ -31,7 +31,8 @@ export function LoginPage() {
     try {
       const response = await authApi.login(username.trim(), password, role);
       if (response.success && response.user) {
-        loginFromApi(response.user);
+        // Pass the token and refreshToken to loginFromApi so they get stored
+        loginFromApi(response.user, response.refreshToken, response.token);
         navigate('/dashboard');
         return;
       }

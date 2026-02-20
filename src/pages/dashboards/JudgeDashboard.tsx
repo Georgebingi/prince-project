@@ -428,13 +428,15 @@ export default function JudgeDashboard() {
                             </div>
                           </div>
 
-                          <div className="space-y-1 sm:space-y-2">
-                            <div className="flex items-center gap-1 text-xs opacity-90">
-                              <BookOpen className="h-3 w-3" />
-                              <span>{caseFile.documents.length} docs</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs opacity-90">
-                              <Clock className="h-3 w-3" />
+<div className="space-y-1 sm:space-y-2">
+                              {caseFile.documents.length > 0 && (
+                                <div className="flex items-center gap-1 text-xs opacity-90">
+                                  <BookOpen className="h-3 w-3" />
+                                  <span>{caseFile.documents.length} {caseFile.documents.length === 1 ? 'doc' : 'docs'}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1 text-xs opacity-90">
+                                <Clock className="h-3 w-3" />
                               <span>{caseFile.daysLeft} days</span>
                             </div>
                           </div>
@@ -475,9 +477,11 @@ export default function JudgeDashboard() {
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" /> Next: {selected.nextHearing}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <FileText className="h-3 w-3" /> {selected.documents.length} documents
-                              </span>
+                                  {selected.documents.length > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <FileText className="h-3 w-3" /> {selected.documents.length} {selected.documents.length === 1 ? 'document' : 'documents'}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2">

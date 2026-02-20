@@ -3,7 +3,7 @@
  * Optimized image loading with blur-up effect and responsive support
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface LazyImageProps {
   src: string;
@@ -62,7 +62,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
         }
       },
       {
-        rootMargin: '50px', // Start loading 50px before entering viewport
+        rootMargin: '50px',
         threshold: 0,
       }
     );
@@ -94,7 +94,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     
     img.src = src;
     
-    // If image is already cached
     if (img.complete) {
       setImageSrc(src);
       setIsLoaded(true);
@@ -119,7 +118,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       className={`relative overflow-hidden ${className}`}
       style={{ width, height }}
     >
-      {/* Placeholder / Loading state */}
       {!isLoaded && !hasError && (
         <div
           className="absolute inset-0 bg-gray-200 animate-pulse"
@@ -127,7 +125,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
         />
       )}
       
-      {/* Error state */}
       {hasError && (
         <div
           className="absolute inset-0 bg-gray-100 flex items-center justify-center"
@@ -137,7 +134,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
         </div>
       )}
       
-      {/* Actual image */}
       <img
         ref={imgRef}
         src={imageSrc || placeholderSrc}
@@ -160,9 +156,6 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   );
 };
 
-/**
- * ResponsiveImage - Image with automatic srcset generation
- */
 interface ResponsiveImageProps extends Omit<LazyImageProps, 'srcSet' | 'sizes'> {
   src: string;
   widths?: number[];
@@ -175,11 +168,9 @@ export const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw',
   ...props
 }) => {
-  // Generate srcset for responsive images
   const srcSet = React.useMemo(() => {
     return widths
       .map((width) => {
-        // Assuming images can be served with width parameter
         const url = src.includes('?') 
           ? `${src}&w=${width}` 
           : `${src}?w=${width}`;
@@ -198,9 +189,6 @@ export const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
   );
 };
 
-/**
- * BackgroundImage - Lazy loaded background image
- */
 interface BackgroundImageProps {
   src: string;
   placeholderSrc?: string;
@@ -264,22 +252,3 @@ export const BackgroundImage: React.FC<BackgroundImageProps> = ({
     </div>
   );
 };
-
-/**
- * PreloadImage - Preload critical images
- */
-export function preloadImage(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve();
-    img.onerror = reject;
-    img.src = src;
-  });
-}
-
-/**
- * Preload multiple images
- */
-export function preloadImages(srcs: string[]): Promise<void[]> {
-  return Promise.all(srcs.map(src => preloadImage(src).catch(() => undefined)));
-}

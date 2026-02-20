@@ -131,11 +131,16 @@ function DashboardRouter() {
 // App Content (All Routes)
 // ======================================================
 function AppContent() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
   const { toasts, removeToast } = useToast();
 
   const showChat = user && !['/', '/login', '/signup'].includes(location.pathname);
+
+  // Show loading screen while authentication is being initialized
+  if (isLoading && !['/', '/login', '/signup'].includes(location.pathname)) {
+    return <PageLoader />;
+  }
 
   return (
     <>

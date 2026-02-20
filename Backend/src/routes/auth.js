@@ -7,6 +7,10 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Default JWT secrets for development (should be set via environment variables in production)
+const DEFAULT_JWT_SECRET = 'kaduna-court-dev-secret-2026';
+const DEFAULT_JWT_REFRESH_SECRET = 'kaduna-court-refresh-secret-2026';
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
@@ -108,6 +112,10 @@ router.post('/login', async (req, res) => {
 
     console.log('[AUTH] Password verified successfully');
 
+    // Use environment secrets or fallbacks for development
+    const jwtSecret = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
+    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || DEFAULT_JWT_REFRESH_SECRET;
+    
     // Generate JWT token
     const token = jwt.sign(
       {
@@ -115,14 +123,14 @@ router.post('/login', async (req, res) => {
         role: user.role,
         staffId: user.staff_id
       },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: process.env.JWT_EXPIRY || '24h' }
     );
 
     // Generate refresh token
     const refreshToken = jwt.sign(
       { id: user.id },
-      process.env.JWT_REFRESH_SECRET,
+      jwtRefreshSecret,
       { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
     );
 
@@ -226,6 +234,10 @@ router.post('/refresh', async (req, res) => {
 
     const user = users[0];
 
+    // Use environment secrets or fallbacks for development
+    const jwtSecret = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
+    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || DEFAULT_JWT_REFRESH_SECRET;
+
     // Generate new access token
     const newToken = jwt.sign(
       {
@@ -233,14 +245,14 @@ router.post('/refresh', async (req, res) => {
         role: user.role,
         staffId: user.staff_id
       },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: process.env.JWT_EXPIRY || '24h' }
     );
 
     // Generate new refresh token
     const newRefreshToken = jwt.sign(
       { id: user.id },
-      process.env.JWT_REFRESH_SECRET,
+      jwtRefreshSecret,
       { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
     );
 

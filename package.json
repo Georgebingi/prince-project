@@ -16,6 +16,7 @@
     "@tanstack/react-query-devtools": "^5.62.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "docx-preview": "^0.3.7",
     "dotenv": "^17.2.3",
     "intersection-observer": "^0.12.2",
     "jsonwebtoken": "^9.0.3",

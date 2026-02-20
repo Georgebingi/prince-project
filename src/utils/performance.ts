@@ -119,7 +119,7 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
 export function requestIdleCallback(
   callback: IdleRequestCallback,
   options?: IdleRequestOptions
-): number {
+): number | ReturnType<typeof setTimeout> {
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
     return window.requestIdleCallback(callback, options);
   }
@@ -136,9 +136,9 @@ export function requestIdleCallback(
 /**
  * Cancel idle callback
  */
-export function cancelIdleCallback(id: number): void {
+export function cancelIdleCallback(id: number | ReturnType<typeof setTimeout>): void {
   if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-    window.cancelIdleCallback(id);
+    window.cancelIdleCallback(id as number);
   } else {
     clearTimeout(id);
   }
@@ -228,7 +228,7 @@ if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
     });
     
     observer.observe({ entryTypes: ['longtask'] });
-  } catch (e) {
+  } catch {
     // Long task observer not supported
   }
 }

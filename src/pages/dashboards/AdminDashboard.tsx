@@ -663,7 +663,8 @@ export default function AdminDashboard() {
                   id="session-timeout"
                   type="number"
                   value={settings.sessionTimeout}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md bg-slate-50"
+                  readOnly
                   aria-label="Session timeout in minutes"
                 />
               </div>

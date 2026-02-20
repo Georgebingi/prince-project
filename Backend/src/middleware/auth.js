@@ -23,8 +23,9 @@ export const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verify token (with fallback secret for development)
+    const jwtSecret = process.env.JWT_SECRET || 'kaduna-court-dev-secret-2024';
+    const decoded = jwt.verify(token, jwtSecret);
     
     // Get user from database to ensure they're still active
     const [users] = await db.query(

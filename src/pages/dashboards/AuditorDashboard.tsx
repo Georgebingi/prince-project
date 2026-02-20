@@ -29,6 +29,7 @@ interface BackendAuditLog {
   ip_address: string | null;
   user_agent: string | null;
   details: Record<string, unknown> | null;
+  user_role: string | null;
 }
 
 export default function AuditorDashboard() {
@@ -62,7 +63,7 @@ export default function AuditorDashboard() {
             second: '2-digit'
           }).replace(',', ''),
           user: log.user_name || `User ${log.user_id}` || 'Unknown',
-          role: 'User',
+          role: log.user_role ? log.user_role.charAt(0).toUpperCase() + log.user_role.slice(1).toLowerCase() : 'Unknown',
           action: log.action,
           resource: log.resource + (log.resource_id ? ` #${log.resource_id}` : ''),
           details: log.details ? JSON.stringify(log.details) : `Action on ${log.resource}`,

@@ -51,8 +51,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       });
     }
 
-    // Verify case exists
-    const [cases] = await db.query('SELECT id FROM cases WHERE id = ?', [caseId]);
+    // Verify case exists - handle both numeric ID and case_number (e.g., "KDH/2026/001")
+    let [cases] = await db.query('SELECT id FROM cases WHERE id = ? OR case_number = ?', [caseId, caseId]);
     if (cases.length === 0) {
       return res.status(404).json({
         success: false,
@@ -63,8 +63,11 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       });
     }
 
+    // Get the numeric ID from the database
+    const numericCaseId = cases[0].id;
+
     // Move file from temp to case folder
-    const caseDir = path.join(__dirname, '..', 'public', 'documents', caseId.toString());
+    const caseDir = path.join(__dirname, '..', 'public', 'documents', numericCaseId.toString());
     const fileName = `${Date.now()}_${req.file.originalname}`;
     const destPath = path.join(caseDir, fileName);
 
@@ -78,7 +81,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     fs.renameSync(tempFilePath, destPath);
 
     // Store relative file path
-    const filePath = `documents/${caseId}/${fileName}`;
+    const filePath = `documents/${numericCaseId}/${fileName}`;
 
 
     // Save document metadata to database
@@ -88,7 +91,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       [
         req.file.originalname,
         type,
-        caseId,
+        numericCaseId,
         req.user.id,
         filePath,
         req.file.size,
@@ -99,22 +102,22 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     // Add timeline entry
     try {
       await db.query(
-        `INSERT INTO case_timeline (case_id, date, title, description, type, created_by) 
+        `INSERT INTO case_timeline (case_id, date, title, description, type, created_by)
          VALUES (?, CURDATE(), ?, ?, ?, ?)`,
-        [caseId, 'Document Uploaded', `Document "${req.file.originalname}" uploaded`, 'admin', req.user.id]
+        [numericCaseId, 'Document Uploaded', `Document "${req.file.originalname}" uploaded`, 'admin', req.user.id]
       );
-    } catch (error) {
+    } catch {
       console.warn('Case timeline table might not exist');
     }
 
     // Log action
     try {
       await db.query(
-        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address) 
+        `INSERT INTO audit_logs (user_id, user_name, action, resource, resource_id, ip_address)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [req.user.id, req.user.name, 'create', 'document', result.insertId, req.ip]
       );
-    } catch (error) {
+    } catch {
       console.warn('Audit logs table might not exist');
     }
 
@@ -146,18 +149,18 @@ router.get('/', async (req, res) => {
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT d.*, u.name as uploaded_by_name, c.case_number 
-      FROM documents d 
-      LEFT JOIN users u ON d.uploaded_by = u.id 
-      LEFT JOIN cases c ON d.case_id = c.id 
+      SELECT d.*, u.name as uploaded_by_name, c.case_number
+      FROM documents d
+      LEFT JOIN users u ON d.uploaded_by = u.id
+      LEFT JOIN cases c ON d.case_id = c.id
       WHERE 1=1
     `;
     const params = [];
 
-    // Filter by case ID
+    // Filter by case ID - handle both numeric ID and case_number
     if (caseId) {
-      query += ' AND d.case_id = ?';
-      params.push(caseId);
+      query += ' AND (d.case_id = ? OR c.case_number = ?)';
+      params.push(caseId, caseId);
     }
 
     // Filter by document type
@@ -277,6 +280,70 @@ router.get('/:id/download', async (req, res) => {
 
   } catch (error) {
     console.error('Download error:', error);
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: error.message || 'Internal server error'
+      }
+    });
+  }
+});
+
+// DELETE /api/documents/:id - Delete a document
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get document metadata from database
+    const [documents] = await db.query(
+      'SELECT * FROM documents WHERE id = ?',
+      [id]
+    );
+
+    if (documents.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Document not found'
+        }
+      });
+    }
+
+    const document = documents[0];
+    const filePath = document.file_path;
+
+    // Find and delete the file
+    const possiblePaths = [
+      path.join(__dirname, '..', '..', 'public', filePath),
+      path.join(__dirname, '..', 'public', filePath),
+      path.resolve('public', filePath)
+    ];
+
+    let fileDeleted = false;
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        try {
+          fs.unlinkSync(p);
+          fileDeleted = true;
+          break;
+        } catch (fileError) {
+          console.error('Error deleting file:', fileError);
+        }
+      }
+    }
+
+    // Delete document record from database
+    await db.query('DELETE FROM documents WHERE id = ?', [id]);
+
+    res.json({
+      success: true,
+      message: 'Document deleted successfully',
+      fileDeleted
+    });
+  } catch (error) {
+    console.error('Delete error:', error);
     return res.status(500).json({
       success: false,
       error: {
